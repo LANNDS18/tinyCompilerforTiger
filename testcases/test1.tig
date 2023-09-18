@@ -1,0 +1,20 @@
+/* an array type and an array variable */
+let
+    var n := getint()
+    type vector = array of int
+    var mat : vector := vector[n] of 0
+
+    function printArr(mat : vector, col : int) = (
+        for i := 0 to col-1
+            do (puti(mat[i]); print(" "));
+        print("\n") )
+
+    function initArr(mat : vector, n : int) =
+        for i := 0 to n-1 do
+            mat[i] := n
+
+in
+    printArr(mat, n);
+    initArr(mat, n);
+    printArr(mat, n)
+end
