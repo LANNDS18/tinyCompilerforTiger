@@ -10,23 +10,23 @@ namespace FRONTEND {
         lexer lex;
         std::queue<token> q;
 
-        token eat(int token_ty);
+        token take_token(int token_ty);
 
-        token tok();
+        token pop_token();
 
         void unuse(const token& t) { q.push(t); };
 
-        A_dec *dec();
+        A_dec *declaration();
 
-        A_exp *exp();
+        A_exp *parse_expression();
 
         A_exp *assignexp();
 
         A_exp *assignexp_();
 
-        A_exp *orexp();
+        A_exp *or_exp();
 
-        A_exp *orexp_(A_exp *parent);
+        A_exp *_or_exp_helper(A_exp *parent);
 
         A_exp *andexp();
 

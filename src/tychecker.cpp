@@ -130,7 +130,7 @@ tgrTy *tychecker::check_exp(A_exp *exp) {
                     auto initTy = check_exp(list->head->exp);
                     if (!(initTy->ty == TIGTY::NILTY && typefields[list->head->name]->ty == TIGTY::RECORD)
                         && initTy != typefields[list->head->name])
-                        error(e->pos, "field and exp type mismatch");
+                        error(e->pos, "field and parse_expression type mismatch");
                 }
                 list = list->tail;
             }
@@ -272,7 +272,7 @@ void tychecker::check_dec(A_dec *dec) {
             if (d->type.empty()) {
                 auto ty = check_exp(d->init);
                 if (ty == nullptr || ty->ty == TIGTY::VOID)
-                    error(d->pos, "invalid type dec.");
+                    error(d->pos, "invalid type declaration.");
                 if (ty->ty == TIGTY::NILTY)
                     error(d->pos, "initializing nil expressions not constrained by record type");
                 tbl.decVar(d->var, ty);
