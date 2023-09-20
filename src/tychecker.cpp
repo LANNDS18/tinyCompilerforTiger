@@ -91,23 +91,23 @@ tgrTy *tychecker::check_exp(A_exp *exp) {
             if (l_ty == nullptr || r_ty == nullptr)
                 error(e->pos, "Fail to judge type in left or right or both");
             switch (e->oper) {
-                case A_oper::A_eqOp:
-                case A_oper::A_neqOp:
+                case A_operator::A_eqOp:
+                case A_operator::A_neqOp:
                     if (l_ty == r_ty || l_ty->ty == TIGTY::NILTY && r_ty->ty == TIGTY::RECORD ||
                         r_ty->ty == TIGTY::NILTY && l_ty->ty == TIGTY::RECORD);
                     else error(e->pos, "invalid types for compare operation");
                     break;
-                case A_oper::A_geOp:
-                case A_oper::A_gtOp:
-                case A_oper::A_leOp:
-                case A_oper::A_ltOP:
+                case A_operator::A_geOp:
+                case A_operator::A_gtOp:
+                case A_operator::A_leOp:
+                case A_operator::A_ltOP:
                     if (l_ty->ty == TIGTY::INT && r_ty->ty == TIGTY::INT ||
                         l_ty->ty == TIGTY::STRING && r_ty->ty == TIGTY::STRING);
                     else error(e->pos, "invalid types for compare operation");
-                case A_oper::A_plusOp:
-                case A_oper::A_minusOp:
-                case A_oper::A_timesOp:
-                case A_oper::A_divideOp:
+                case A_operator::A_plusOp:
+                case A_operator::A_minusOp:
+                case A_operator::A_timesOp:
+                case A_operator::A_divideOp:
                     if (l_ty->ty == TIGTY::INT && r_ty->ty == TIGTY::INT);
                     else error(e->pos, "invalid types for int operation");
                 default:

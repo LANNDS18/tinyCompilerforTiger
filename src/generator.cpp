@@ -114,25 +114,25 @@ Value *generator::genOpExp(A_OpExp *exp) {
     if (!lhs || !rhs)
         return nullptr;
     switch (exp->oper) {
-        case A_oper::A_plusOp:
+        case A_operator::A_plusOp:
             return builder.CreateAdd(lhs, rhs);
-        case A_oper::A_minusOp:
+        case A_operator::A_minusOp:
             return builder.CreateSub(lhs, rhs);
-        case A_oper::A_timesOp:
+        case A_operator::A_timesOp:
             return builder.CreateMul(lhs, rhs);
-        case A_oper::A_divideOp:
+        case A_operator::A_divideOp:
             return builder.CreateSDiv(lhs, rhs);
-        case A_oper::A_eqOp:
+        case A_operator::A_eqOp:
             return builder.CreateZExt(builder.CreateICmpEQ(lhs, rhs), builder.getInt64Ty());
-        case A_oper::A_neqOp:
+        case A_operator::A_neqOp:
             return builder.CreateZExt(builder.CreateICmpNE(lhs, rhs), builder.getInt64Ty());
-        case A_oper::A_ltOP:
+        case A_operator::A_ltOP:
             return builder.CreateZExt(builder.CreateICmpSLT(lhs, rhs), builder.getInt64Ty());
-        case A_oper::A_leOp:
+        case A_operator::A_leOp:
             return builder.CreateZExt(builder.CreateICmpSLE(lhs, rhs), builder.getInt64Ty());
-        case A_oper::A_gtOp:
+        case A_operator::A_gtOp:
             return builder.CreateZExt(builder.CreateICmpSGT(lhs, rhs), builder.getInt64Ty());
-        case A_oper::A_geOp:
+        case A_operator::A_geOp:
             return builder.CreateZExt(builder.CreateICmpSGE(lhs, rhs), builder.getInt64Ty());
     }
     assert(0);

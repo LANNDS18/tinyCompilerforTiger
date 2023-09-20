@@ -84,34 +84,34 @@ void print_exp(A_exp *exp, int front_space) {
             auto e = dynamic_cast<A_OpExp *>(exp);
             cout << "OpExp(Oper(";
             switch (e->oper) {
-                case A_oper::A_divideOp:
+                case A_operator::A_divideOp:
                     cout << "DIV";
                     break;
-                case A_oper::A_eqOp:
+                case A_operator::A_eqOp:
                     cout << "EQ";
                     break;
-                case A_oper::A_geOp:
+                case A_operator::A_geOp:
                     cout << "GE";
                     break;
-                case A_oper::A_gtOp:
+                case A_operator::A_gtOp:
                     cout << "GT";
                     break;
-                case A_oper::A_leOp:
+                case A_operator::A_leOp:
                     cout << "LE";
                     break;
-                case A_oper::A_ltOP:
+                case A_operator::A_ltOP:
                     cout << "LT";
                     break;
-                case A_oper::A_minusOp:
+                case A_operator::A_minusOp:
                     cout << "SUB";
                     break;
-                case A_oper::A_neqOp:
+                case A_operator::A_neqOp:
                     cout << "NEQ";
                     break;
-                case A_oper::A_plusOp:
+                case A_operator::A_plusOp:
                     cout << "ADD";
                     break;
-                case A_oper::A_timesOp:
+                case A_operator::A_timesOp:
                     cout << "MUL";
                     break;
             }

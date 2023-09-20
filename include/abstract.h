@@ -7,7 +7,7 @@
 #include "token.h"
 
 // Enumeration representing various arithmetic and comparison operators.
-enum class A_oper {
+enum class A_operator {
     A_plusOp,    // Addition operator
     A_minusOp,   // Subtraction operator
     A_timesOp,   // Multiplication operator
@@ -150,11 +150,11 @@ public:
 
 struct A_OpExp : public A_exp {
 public:
-    A_oper oper;
+    A_operator oper;
     A_exp *left;
     A_exp *right;
 
-    A_OpExp(A_pos p, A_oper oper_, A_exp *left_, A_exp *right_) :
+    A_OpExp(A_pos p, A_operator oper_, A_exp *left_, A_exp *right_) :
             A_exp(p, type::OpExp), oper(oper_), left(left_), right(right_) {};
 };
 

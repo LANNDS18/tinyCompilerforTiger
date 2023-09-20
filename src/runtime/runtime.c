@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <limits.h>
+
+
 
 // builtin functions for tiger.
 void __print__(char *s) {
@@ -25,8 +29,30 @@ char* __getchar__() {
 }
 
 __int64_t __getint__() {
-    __int64_t i;
-    scanf("%lld", &i);
+    char buffer[100]; // assuming number input won't exceed 100 characters
+    char *endptr;
+
+    if (!fgets(buffer, sizeof(buffer), stdin)) {
+        // handle error or exit
+        perror("Failed to read input");
+        exit(EXIT_FAILURE);
+    }
+
+    errno = 0; // reset error number
+    __int64_t i = strtoll(buffer, &endptr, 10); // base 10 conversion
+
+    // Check for various possible errors
+    if ((errno == ERANGE && (i == LONG_LONG_MAX || i == LONG_LONG_MIN))
+        || (errno != 0 && i == 0)) {
+        perror("Conversion error");
+        exit(EXIT_FAILURE);
+    }
+
+    if (endptr == buffer) {
+        fprintf(stderr, "No digits were found\n");
+        exit(EXIT_FAILURE);
+    }
+
     return i;
 }
 
@@ -48,7 +74,12 @@ char* __chr__(__int64_t i) {
 }
 
 __int64_t __size__(char *s) {
-    return strlen(s);
+    size_t len = strlen(s);
+    if (len > LLONG_MAX) {
+        fprintf(stderr, "String length exceeds __int64_t capacity.\n");
+        exit(EXIT_FAILURE);
+    }
+    return (__int64_t)len;
 }
 
 char* __substring__(char *s, __int64_t first, __int64_t n) {

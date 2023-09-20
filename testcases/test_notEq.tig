@@ -1,0 +1,13 @@
+let
+  var i := 10
+  var c := 11
+  type person = {name: string, age: int}
+  var unknownPerson: person := nil
+in
+  let
+    var a := 1000
+  in
+    if i <>c then (print("i and c are not equal, i = "); puti(i); print("\n")) else print("is equal")
+  end
+end
+
