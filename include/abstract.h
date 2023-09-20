@@ -35,10 +35,10 @@ struct A_expList;
 struct A_funcdec;
 struct A_funcdecList;
 struct A_decList;
-struct A_namety;
-struct A_nametyList;
-struct A_efield;
-struct A_efieldList;
+struct A_TyDeclareName;
+struct A_TyDeclareNameList;
+struct A_expField;
+struct A_expFieldList;
 
 // Base structure representing a variable in the AST.
 struct A_var {
@@ -163,9 +163,9 @@ public:
 struct A_RecordExp : public A_exp {
 public:
     S_symbol type;
-    A_efieldList *fields;
+    A_expFieldList *fields;
 
-    A_RecordExp(A_pos p, S_symbol type_, A_efieldList *fields_) :
+    A_RecordExp(A_pos p, S_symbol type_, A_expFieldList *fields_) :
             A_exp(p, type::RecordExp), type(std::move(type_)), fields(fields_) {};
 };
 
@@ -245,7 +245,6 @@ public:
 };
 
 
-
 // Represents an array creation expression.
 struct A_ArrayExp : public A_exp {
 public:
@@ -256,7 +255,6 @@ public:
     A_ArrayExp(A_pos p, S_symbol t, A_exp *size_, A_exp *init_) :
             A_exp(p, type::ArrayExp), type(std::move(t)), size(size_), init(init_) {};
 };
-
 
 
 // Base class for all declarations in the language.
@@ -299,9 +297,9 @@ public:
 // Represents a type declaration.
 struct A_TypeDec : A_dec {
 public:
-    A_nametyList *type;
+    A_TyDeclareNameList *type;
 
-    A_TypeDec(A_pos p, A_nametyList *type_) :
+    A_TypeDec(A_pos p, A_TyDeclareNameList *type_) :
             A_dec(p, type::TYDS), type(type_) {};
 };
 
@@ -310,7 +308,9 @@ public:
 struct A_ty {
 public:
     enum class type {
-        NameTy, RecordTy, ArrayTy
+        NameTy,
+        RecordTy,
+        ArrayTy
     };
     A_pos pos;
     type ty;
@@ -408,37 +408,37 @@ public:
 };
 
 
-struct A_namety {
+struct A_TyDeclareName {
 public:
     S_symbol name;
     A_ty *ty;
 
-    A_namety(S_symbol name_, A_ty *ty_) : name(std::move(name_)), ty(ty_) {};
+    A_TyDeclareName(S_symbol name_, A_ty *ty_) : name(std::move(name_)), ty(ty_) {};
 };
 
-struct A_nametyList {
+struct A_TyDeclareNameList {
 public:
-    A_namety *head;
-    A_nametyList *tail;
+    A_TyDeclareName *head;
+    A_TyDeclareNameList *tail;
 
-    A_nametyList(A_namety *head_, A_nametyList *tail_) :
+    A_TyDeclareNameList(A_TyDeclareName *head_, A_TyDeclareNameList *tail_) :
             head(head_), tail(tail_) {};
 };
 
 
-struct A_efield {
+struct A_expField {
 public:
     S_symbol name;
     A_exp *exp;
 
-    A_efield(S_symbol name_, A_exp *exp_) : name(std::move(name_)), exp(exp_) {};
+    A_expField(S_symbol name_, A_exp *exp_) : name(std::move(name_)), exp(exp_) {};
 };
 
 
-struct A_efieldList {
-    A_efield *head;
-    A_efieldList *tail;
+struct A_expFieldList {
+    A_expField *head;
+    A_expFieldList *tail;
 
-    A_efieldList(A_efield *head_, A_efieldList *tail_) :
+    A_expFieldList(A_expField *head_, A_expFieldList *tail_) :
             head(head_), tail(tail_) {};
 };

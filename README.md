@@ -47,9 +47,9 @@ make SRC_FILE=<testcases/test.tig> OUTPUT=<test>
   - Example:
       ```
       let
-          type student = {name: string, age: int, isBoss: bool}
+          type student = {name: string, age: int}
       in
-          var lannds: student := student{name = "LANNDS Z", age = 21, isBoss = false}
+          var lannds: student := student{name = "LANNDS Z", age = 21}
       end
       ```
 - Array Type
@@ -64,7 +64,7 @@ make SRC_FILE=<testcases/test.tig> OUTPUT=<test>
   
 #### Variable Declaration
 - Simple Variable (`A_SimpleVar`)
-- Field Variable (`A_FieldVar`) :  A reference to a field within a record type
+- Field Variable (`A_FieldVar`) :  Function argument, 
 - Subscript Variable (`A_SubscriptVar`): An element within an array
 
 #### Function Declaration

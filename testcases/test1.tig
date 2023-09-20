@@ -1,20 +1,34 @@
 /* an array type and an array variable */
 let
-    var n := getint()
-    type vector = array of int
-    var mat : vector := vector[n] of 0
+  var n := getint()
+  var g := 2
+  var c := 0
+  type vector = array of int
+  type personlist = array of person type person = {name: string, age: int}
+  var mat : vector := vector[n] of 0
 
-    function printArr(mat : vector, col : int) = (
-        for i := 0 to col-1
-            do (puti(mat[i]); print(" "));
-        print("\n") )
+  function printArr(mat : vector, col : int) = (
+                                                 for i := 0 to col-1
+                                                 do (puti(mat[i]); print(" "));
+                                                 print("\n") )
 
-    function initArr(mat : vector, n : int) =
-        for i := 0 to n-1 do
-            mat[i] := n
+  function initArr(mat : vector, n : int) =
+    for i := 0 to n-1 do
+      mat[i] := n
+
+  function initArr2(mat : vector, n : int, g:int): int = (
+      for i := 0
+      to n-1
+      do mat[i] := n;
+      n := 1000;
+      g := g+1;
+      puti(n)
+    )
 
 in
-    printArr(mat, n);
-    initArr(mat, n);
-    printArr(mat, n)
+  printArr(mat, n);
+  initArr(mat, n);
+  printArr(mat, n);
+  c = initArr2(mat, n, g);
+  puti(c)
 end

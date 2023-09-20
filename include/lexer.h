@@ -82,7 +82,7 @@ namespace FRONTEND {
 
         ~lexer();
 
-        lexer(const std::string& src_file);
+        explicit lexer(const std::string& src_file);
 
         token next();
     };

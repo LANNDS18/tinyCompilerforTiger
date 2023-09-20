@@ -20,6 +20,7 @@ set(LEXER_SRC src/lexer.cpp)
 set(PARSER_SRC src/parser.cpp)
 set(CHECKER_SRC src/symtbl.cpp src/tychecker.cpp)
 set(GENERATOR_SRC src/generator.cpp)
+set(AST_SRC src/outputAST.cpp)
 set(MAIN_SRC src/main.cpp)
 set(RUNTIME_SRC src/runtime/runtime.c)
 
@@ -30,7 +31,7 @@ add_executable(
         ${PARSER_SRC}
         ${CHECKER_SRC}
         ${GENERATOR_SRC}
-        src/printabs.cpp
+        ${AST_SRC}
         ${RUNTIME_SRC}
 )
 

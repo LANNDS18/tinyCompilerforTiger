@@ -7,20 +7,22 @@ namespace FRONTEND {
 
 
     token parser::popToken() {
-        if(q.empty())
+        if (q.empty())
             return lex.next();
-        auto tmp = q.front();
+        auto tk = q.front();
         q.pop();
-        return tmp;
+        return tk;
     }
 
     token parser::checkNextToken(int token_ty) {
-        auto t = popToken();
-        if(t.type != token_ty) {
+        auto tk = popToken();
+        if (tk.type != token_ty) {
             token exp(token_ty, -1);
-            throw std::runtime_error("in line " + std::to_string(t.line) + ": parser: expected " + exp.to_str() + " but got " + t.to_str());
+            throw std::runtime_error(
+                    "in line " + std::to_string(tk.line) + ": parser: expected " + exp.to_str() + " but got " +
+                    tk.to_str());
         }
-        return t;
+        return tk;
     }
 
     A_dec *parser::declaration() {
@@ -45,8 +47,8 @@ namespace FRONTEND {
                 token id = checkNextToken(IDENTIFIER);
                 checkNextToken(EQ);
                 auto type = ty();
-                auto *type_(new A_namety(id.val, type));
-                auto list = new A_nametyList(type_, nullptr);
+                auto *type_(new A_TyDeclareName(id.val, type));
+                auto list = new A_TyDeclareNameList(type_, nullptr);
                 return new A_TypeDec(id.line, list);
             }
             case FUNCTION: {
@@ -80,7 +82,7 @@ namespace FRONTEND {
         return nullptr;
     }
 
-    A_exp* parser::parse_expression() {
+    A_exp *parser::parse_expression() {
         auto t = popToken();
         switch (t.type) {
             case LET: {
@@ -109,14 +111,14 @@ namespace FRONTEND {
             case IF: {
                 auto cond = parse_expression();
                 checkNextToken(THEN);
-                auto True = parse_expression();
-                token expexted_else = popToken();
-                if (expexted_else.type != ELSE) {
-                    pushTokenBack(expexted_else);
-                    return new A_IfExp(t.line, cond, True, nullptr);
+                auto trueBranch = parse_expression();
+                token isElse = popToken();
+                if (isElse.type != ELSE) {
+                    pushTokenBack(isElse);
+                    return new A_IfExp(t.line, cond, trueBranch, nullptr);
                 }
-                auto False = parse_expression();
-                return new A_IfExp(t.line, cond, True, False);
+                auto falseBranch = parse_expression();
+                return new A_IfExp(t.line, cond, trueBranch, falseBranch);
             }
             case BREAK:
                 return new A_BreakExp(t.line);
@@ -142,8 +144,8 @@ namespace FRONTEND {
             std::cerr << "parser: left side can not be right value in assign parse_expression." << std::endl;
             exit(1);
         }
-        auto varexp = dynamic_cast<A_VarExp *>(o);
-        return new A_AssignExp(varexp->pos, varexp->var, a);
+        auto varExp = dynamic_cast<A_VarExp *>(o);
+        return new A_AssignExp(varExp->pos, varExp->var, a);
     }
 
     A_exp *parser::assignmentExpHelper() {
@@ -173,7 +175,7 @@ namespace FRONTEND {
     }
 
     A_exp *parser::andExp() {
-        auto r = relexp();
+        auto r = relationExp();
         return andExpHelper(r);
     }
 
@@ -184,17 +186,17 @@ namespace FRONTEND {
             return parent;
         }
         auto zero_exp = new A_IntExp(parent->pos, 0);
-        auto r = relexp();
+        auto r = relationExp();
         A_exp *cur = new A_IfExp(r->pos, parent, r, zero_exp);
         return andExpHelper(cur);
     }
 
-    A_exp *parser::relexp() {
+    A_exp *parser::relationExp() {
         auto a = addExp();
-        return relexp_(a);
+        return relationExpHelper(a);
     }
 
-    A_exp *parser::relexp_(A_exp *parent) {
+    A_exp *parser::relationExpHelper(A_exp *parent) {
         token t = popToken();
         A_operator op;
         switch (t.type) {
@@ -222,7 +224,7 @@ namespace FRONTEND {
         }
         auto a = addExp();
         A_exp *cur = new A_OpExp(a->pos, op, parent, a);
-        return relexp_(cur);
+        return relationExpHelper(cur);
     }
 
     A_exp *parser::addExp() {
@@ -293,10 +295,10 @@ namespace FRONTEND {
                 pushTokenBack(t);
                 break;
         }
-        return lval();
+        return leftVal();
     }
 
-    A_exp *parser::lval() {
+    A_exp *parser::leftVal() {
         token t = checkNextToken(IDENTIFIER);
         auto var = new A_SimpleVar(t.line, t.val);
         return identifierExp(var);
@@ -346,7 +348,7 @@ namespace FRONTEND {
             }
                 break;
             case L_BIG: {
-                auto list = eFieldList();
+                auto list = expFieldList();
                 checkNextToken(R_BIG);
                 auto v = dynamic_cast<A_SimpleVar *>(var);
                 return new A_RecordExp(v->pos, v->sym, list);
@@ -355,13 +357,15 @@ namespace FRONTEND {
                 auto v = dynamic_cast<A_SubscriptVar *>(var);
                 if (v->ty != A_var::type::SUBSCRIPT) {
                     std::cerr << "in line " << v->pos << ":" << std::endl;
-                    std::cerr << "parser: array parse_expression expect format 'typename[size] of initialexp'." << std::endl;
+                    std::cerr << "parser: array parse_expression expect format 'typename[size] of initialexp'."
+                              << std::endl;
                 }
                 auto e = parse_expression();
                 auto primev = dynamic_cast<A_SimpleVar *>(v->var);
                 if (primev->ty != A_var::type::SIMPLE) {
                     std::cerr << "in line " << v->pos << ":" << std::endl;
-                    std::cerr << "parser: array parse_expression expect format 'typename[size] of initialexp'." << std::endl;
+                    std::cerr << "parser: array parse_expression expect format 'typename[size] of initialexp'."
+                              << std::endl;
                 }
                 return new A_ArrayExp(v->pos, primev->sym, v->exp, e);
             }
@@ -399,36 +403,36 @@ namespace FRONTEND {
         return new A_SeqExp(p, list);
     }
 
-    A_efieldList *parser::eFieldList() {
+    A_expFieldList *parser::expFieldList() {
         token t = popToken();
         if (t.type == R_BIG) {
             pushTokenBack(t);
-            return new A_efieldList(nullptr, nullptr);
+            return new A_expFieldList(nullptr, nullptr);
         }
         pushTokenBack(t);
-        std::vector<A_efield *> vec;
+        std::vector<A_expField *> vec;
         while (true) {
-            auto ef = eField();
-            vec.push_back(std::move(ef));
+            auto ef = expField();
+            vec.push_back(ef);
             token _t = popToken();
             if (_t.type == COMMA)
                 continue;
             pushTokenBack(_t);
             break;
         }
-        A_efieldList *list(nullptr);
+        A_expFieldList *list(nullptr);
         for (int i = vec.size() - 1; i >= 0; i--) {
             auto tail = list;
-            list = new A_efieldList(vec[i], tail);
+            list = new A_expFieldList(vec[i], tail);
         }
         return list;
     }
 
-    A_efield *parser::eField() {
+    A_expField *parser::expField() {
         token id = checkNextToken(IDENTIFIER);
         checkNextToken(EQ);
         auto e = parse_expression();
-        return new A_efield(id.val, e);
+        return new A_expField(id.val, e);
     }
 
     A_fieldList *parser::fieldList() {
@@ -490,26 +494,26 @@ namespace FRONTEND {
     A_decList *parser::declarationList() {
         std::vector<A_dec *> vec;
         while (true) {
-            auto d = declaration();
-            if (d == nullptr)
+            auto dec = declaration();
+            if (dec == nullptr)
                 break;
             if (!vec.empty()) {
-                if (vec.back()->ty == A_dec::type::FUNCDS && d->ty == A_dec::type::FUNCDS) {
+                if (vec.back()->ty == A_dec::type::FUNCDS && dec->ty == A_dec::type::FUNCDS) {
                     auto list = dynamic_cast<A_FunctionDec *>(vec.back())->function;
                     while (list->tail != nullptr)
                         list = list->tail;
-                    list->tail = dynamic_cast<A_FunctionDec *>(d)->function;
+                    list->tail = dynamic_cast<A_FunctionDec *>(dec)->function;
                     continue;
                 }
-                if (vec.back()->ty == A_dec::type::TYDS && d->ty == A_dec::type::TYDS) {
+                if (vec.back()->ty == A_dec::type::TYDS && dec->ty == A_dec::type::TYDS) {
                     auto list = dynamic_cast<A_TypeDec *>(vec.back())->type;
                     while (list->tail != nullptr)
                         list = list->tail;
-                    list->tail = dynamic_cast<A_TypeDec *>(d)->type;
+                    list->tail = dynamic_cast<A_TypeDec *>(dec)->type;
                     continue;
                 }
             }
-            vec.push_back(std::move(d));
+            vec.push_back(dec);
         }
         A_decList *list(nullptr);
         for (int i = vec.size() - 1; i >= 0; i--) {

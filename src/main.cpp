@@ -1,7 +1,7 @@
 #include "parser.h"
 #include "tychecker.h"
 #include "generator.h"
-#include "printabs.h"
+#include "outputAST.h"
 #include <iostream>
 
 int main(int argc, char *argv[]) {
@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
         std::ofstream outfile(output_file);
         std::streambuf *coutbuf = std::cout.rdbuf();
         std::cout.rdbuf(outfile.rdbuf());
-        print_exp(tree, 0);
+        printExp(tree, 0);
         std::cout.rdbuf(coutbuf);
     } else if (strcmp(argv[3], "-ast+") == 0) {
         std::ofstream outfile(output_file);
@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
         std::cout.rdbuf(outfile.rdbuf());
         tychecker c(tree);
         c.check();
-        print_exp(tree, 0);
+        printExp(tree, 0);
         std::cout.rdbuf(coutbuf);
     } else {
         std::cout << "Unknown cmd arg. Expected args are:" << std::endl;

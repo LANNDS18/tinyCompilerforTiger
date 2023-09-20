@@ -32,9 +32,9 @@ namespace FRONTEND {
 
         A_exp *andExpHelper(A_exp *parent);
 
-        A_exp *relexp();
+        A_exp *relationExp();
 
-        A_exp *relexp_(A_exp *parent);
+        A_exp *relationExpHelper(A_exp *parent);
 
         A_exp *addExp();
 
@@ -48,13 +48,13 @@ namespace FRONTEND {
 
         A_exp *valExp();
 
-        A_exp *lval();
+        A_exp *leftVal();
 
         A_exp *identifierExp(A_var *var);
 
-        A_efieldList *eFieldList();
+        A_expFieldList *expFieldList();
 
-        A_efield *eField();
+        A_expField *expField();
 
         A_fieldList *fieldList();
 
