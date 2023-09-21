@@ -1,4 +1,4 @@
-#include "../include/generator.h"
+#include "../include/codeGenerator.h"
 #include <cassert>
 #include <utility>
 #include <vector>
@@ -9,7 +9,7 @@ void error(const std::string &err) {
     exit(1);
 }
 
-Value *generator::genExp(A_exp *exp) {
+Value *codeGenerator::genExp(A_exp *exp) {
     if (!exp)
         return nullptr;
     switch (exp->ty) {
@@ -47,12 +47,12 @@ Value *generator::genExp(A_exp *exp) {
     assert(0);
 }
 
-Value *generator::genVarExp(A_VarExp *exp) {
+Value *codeGenerator::genVarExp(A_VarExp *exp) {
     auto ptr = genLeftValue(exp->var);
     return convertRightValue(ptr.first);
 }
 
-std::pair<Value *, A_ty *> generator::genLeftValue(A_var *var) {
+std::pair<Value *, A_ty *> codeGenerator::genLeftValue(A_var *var) {
     switch (var->ty) {
         case A_var::type::SIMPLE: {
             auto v = dynamic_cast<A_SimpleVar *>(var);
@@ -86,19 +86,19 @@ std::pair<Value *, A_ty *> generator::genLeftValue(A_var *var) {
     assert(0);
 }
 
-Value *generator::genNilExp() {
+Value *codeGenerator::genNilExp() {
     return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(NilTy));
 }
 
-Value *generator::genIntExp(A_IntExp *exp) {
+Value *codeGenerator::genIntExp(A_IntExp *exp) {
     return llvm::ConstantInt::get(context, llvm::APInt(64, exp->i, true));
 }
 
-Value *generator::genStringExp(A_StringExp *exp) {
+Value *codeGenerator::genStringExp(A_StringExp *exp) {
     return getStrConstant(exp->s);
 }
 
-Value *generator::genCallExp(A_CallExp *exp) {
+Value *codeGenerator::genCallExp(A_CallExp *exp) {
     Function *callee = fenv.get(exp->func);
     assert(callee != nullptr);
     std::vector<Value *> args;
@@ -108,7 +108,7 @@ Value *generator::genCallExp(A_CallExp *exp) {
     return builder.CreateCall(callee, args);
 }
 
-Value *generator::genOpExp(A_OpExp *exp) {
+Value *codeGenerator::genOpExp(A_OpExp *exp) {
     auto lhs = genExp(exp->left);
     auto rhs = genExp(exp->right);
     if (!lhs || !rhs)
@@ -138,7 +138,7 @@ Value *generator::genOpExp(A_OpExp *exp) {
     assert(0);
 }
 
-int generator::getIdxInRecordTy(const std::string &name, A_RecordTy *ty) {
+int codeGenerator::getIdxInRecordTy(const std::string &name, A_RecordTy *ty) {
     int idx = 0;
     auto list = ty->record;
     for (; list != nullptr && list->head != nullptr; list = list->tail) {
@@ -149,7 +149,7 @@ int generator::getIdxInRecordTy(const std::string &name, A_RecordTy *ty) {
     return idx;
 }
 
-Type *generator::getFieldType(const std::string &name, A_RecordTy *ty) {
+Type *codeGenerator::getFieldType(const std::string &name, A_RecordTy *ty) {
     auto list = ty->record;
     for (; list != nullptr && list->head != nullptr; list = list->tail) {
         if (list->head->name == name)
@@ -158,7 +158,7 @@ Type *generator::getFieldType(const std::string &name, A_RecordTy *ty) {
     return nullptr;
 }
 
-A_ty *generator::getFieldTypeDec(const std::string &name, A_RecordTy *ty) {
+A_ty *codeGenerator::getFieldTypeDec(const std::string &name, A_RecordTy *ty) {
     auto list = ty->record;
     for (; list != nullptr && list->head != nullptr; list = list->tail) {
         if (list->head->name == name)
@@ -168,7 +168,7 @@ A_ty *generator::getFieldTypeDec(const std::string &name, A_RecordTy *ty) {
 }
 
 
-Value *generator::genRecordExp(A_RecordExp *exp) {
+Value *codeGenerator::genRecordExp(A_RecordExp *exp) {
     auto type = tenv.get(exp->type);
     assert(type != nullptr && type->isPointerTy());
     auto elementType = llvm::cast<llvm::PointerType>(type)->getElementType();
@@ -197,7 +197,7 @@ Value *generator::genRecordExp(A_RecordExp *exp) {
     return ptr;
 }
 
-Value *generator::genSeqExp(A_SeqExp *exp) {
+Value *codeGenerator::genSeqExp(A_SeqExp *exp) {
     auto list = exp->seq;
     Value *res = nullptr;
     while (list != nullptr && list->head != nullptr) {
@@ -207,7 +207,7 @@ Value *generator::genSeqExp(A_SeqExp *exp) {
     return res;
 }
 
-Value *generator::genAssignExp(A_AssignExp *exp) {
+Value *codeGenerator::genAssignExp(A_AssignExp *exp) {
     assert(exp->var != nullptr);
     auto dst = genLeftValue(exp->var);
     auto val = genExp(exp->exp);
@@ -232,7 +232,7 @@ Value *generator::genAssignExp(A_AssignExp *exp) {
     return nullptr;
 }
 
-Value *generator::genIfExp(A_IfExp *exp) {
+Value *codeGenerator::genIfExp(A_IfExp *exp) {
     Value *CondV = genExp(exp->test);
     CondV = builder.CreateICmpNE(CondV, builder.getInt64(0));
     assert(CondV != nullptr);
@@ -275,7 +275,7 @@ Value *generator::genIfExp(A_IfExp *exp) {
     return node;
 }
 
-Value *generator::genWhileExp(A_WhileExp *exp) {
+Value *codeGenerator::genWhileExp(A_WhileExp *exp) {
     Function *TheFunction = builder.GetInsertBlock()->getParent();
     BasicBlock *CondBB = BasicBlock::Create(context, "wcond", TheFunction);
     BasicBlock *WhileBodyBB = BasicBlock::Create(context, "wbody", TheFunction);
@@ -299,7 +299,7 @@ Value *generator::genWhileExp(A_WhileExp *exp) {
     return nullptr;
 }
 
-Value *generator::genLetExp(A_LetExp *exp) {
+Value *codeGenerator::genLetExp(A_LetExp *exp) {
     beginScope();
     for (auto l = exp->decs; l != nullptr; l = l->tail) {
         if (l->head != nullptr)
@@ -310,7 +310,7 @@ Value *generator::genLetExp(A_LetExp *exp) {
     return nullptr;
 }
 
-Value *generator::genForExp(A_ForExp *exp) {
+Value *codeGenerator::genForExp(A_ForExp *exp) {
     beginScope();
     Function *TheFunction = builder.GetInsertBlock()->getParent();
     BasicBlock *InitBB = BasicBlock::Create(context, "finit", TheFunction);
@@ -351,7 +351,7 @@ Value *generator::genForExp(A_ForExp *exp) {
     return nullptr;
 }
 
-Value *generator::genArrayExp(A_ArrayExp *exp) {
+Value *codeGenerator::genArrayExp(A_ArrayExp *exp) {
     auto type = tenv.get(exp->type);
     assert(type != nullptr && type->isPointerTy());
     auto arrayLength = genExp(exp->size);
@@ -404,7 +404,7 @@ Value *generator::genArrayExp(A_ArrayExp *exp) {
     return ptr;
 }
 
-Value *generator::genBreakExp(A_BreakExp *exp) {
+Value *codeGenerator::genBreakExp(A_BreakExp *exp) {
     // ignore invalid break
     if (!loop_stack.empty()) {
         builder.CreateBr(loop_stack.back());
@@ -415,18 +415,18 @@ Value *generator::genBreakExp(A_BreakExp *exp) {
     return nullptr;
 }
 
-Value *generator::getStrConstant(std::string &str) {
+Value *codeGenerator::getStrConstant(std::string &str) {
     llvm::Constant *strConstant = builder.CreateGlobalStringPtr(str);
     return strConstant;
 }
 
-void generator::genVarDec(A_VarDec *dec) {
+void codeGenerator::genVarDec(A_VarDec *dec) {
     Value *initValue = genExp(dec->init);
     createNamedValue(dec->var, initValue, tenv.get(dec->type));
     vdecs.put(dec->var, dec);
 }
 
-void generator::genTypeDec(A_TypeDec *dec) {
+void codeGenerator::genTypeDec(A_TypeDec *dec) {
     auto l = dec->type;
     // At first, we just focus on record type, because it supports pre declare
     for (; l != nullptr && l->head != nullptr; l = l->tail) {
@@ -474,7 +474,7 @@ void generator::genTypeDec(A_TypeDec *dec) {
     }
 }
 
-void generator::genFuncDec(A_FunctionDec *dec) {
+void codeGenerator::genFuncDec(A_FunctionDec *dec) {
     auto l = dec->function;
     for (; l != nullptr && l->head != nullptr; l = l->tail) {
         auto cur = l->head;
@@ -526,7 +526,7 @@ void generator::genFuncDec(A_FunctionDec *dec) {
     }
 }
 
-void generator::genDec(A_dec *dec) {
+void codeGenerator::genDec(A_dec *dec) {
     switch (dec->ty) {
         case A_dec::type::VARD:
             genVarDec(dynamic_cast<A_VarDec *>(dec));
@@ -540,17 +540,17 @@ void generator::genDec(A_dec *dec) {
     }
 }
 
-Function * generator::createIntrinsicFunction(const std::string &name, std::vector<Type *> const &arg_tys, Type *ret_ty) {
+Function * codeGenerator::createIntrinsicFunction(const std::string &name, std::vector<Type *> const &arg_tys, Type *ret_ty) {
     auto functionType = llvm::FunctionType::get(ret_ty, arg_tys, false);
     auto func = Function::Create(functionType, Function::ExternalLinkage, name, module.get());
     return func;
 }
 
-Value *generator::convertTypedNil(Type *type) {
+Value *codeGenerator::convertTypedNil(Type *type) {
     return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(type));
 }
 
-void generator::beginScope() {
+void codeGenerator::beginScope() {
     tenv.begin();
     venv.begin();
     fenv.begin();
@@ -558,7 +558,7 @@ void generator::beginScope() {
     vdecs.begin();
 }
 
-void generator::endScope() {
+void codeGenerator::endScope() {
     tenv.pop();
     venv.pop();
     fenv.pop();
@@ -566,7 +566,7 @@ void generator::endScope() {
     vdecs.pop();
 }
 
-void generator::createNamedValue(std::string name, Value *value, Type *type) {
+void codeGenerator::createNamedValue(std::string name, Value *value, Type *type) {
     if (value->getType() == NilTy) {
         value = convertTypedNil(type);
     }
@@ -575,15 +575,15 @@ void generator::createNamedValue(std::string name, Value *value, Type *type) {
     venv.put(std::move(name), namedValue);
 }
 
-Value *generator::getNamedValue(std::string name) {
+Value *codeGenerator::getNamedValue(std::string name) {
     return venv.get(name);
 }
 
-Value *generator::convertRightValue(Value *leftValue) {
+Value *codeGenerator::convertRightValue(Value *leftValue) {
     return builder.CreateLoad(leftValue);
 }
 
-void generator::initFenv() {
+void codeGenerator::initFenv() {
     llvm::Type *intType{llvm::Type::getInt64Ty(context)};
     llvm::Type *voidType{llvm::Type::getVoidTy(context)};
     llvm::Type *stringType{llvm::Type::getInt8PtrTy(context)};
@@ -604,7 +604,7 @@ void generator::initFenv() {
     fenv.put("chr", createIntrinsicFunction("alloc", {intType}, stringType));
 }
 
-void generator::generate(A_exp *syntax_tree, const std::string &filename, int task) {
+void codeGenerator::generate(A_exp *syntax_tree, const std::string &filename, int task) {
     auto mainFunctionType = llvm::FunctionType::get(llvm::Type::getInt64Ty(context), false);
     auto mainFunction =
             llvm::Function::Create(mainFunctionType, llvm::GlobalValue::ExternalLinkage,
@@ -627,7 +627,7 @@ void generator::generate(A_exp *syntax_tree, const std::string &filename, int ta
     std::cout << "Done.\n";
 }
 
-std::vector<Value *> generator::genIndice(const std::vector<int> &ids) {
+std::vector<Value *> codeGenerator::genIndice(const std::vector<int> &ids) {
     std::vector<Value *> ret;
     ret.reserve(ids.size());
     for (auto id: ids)

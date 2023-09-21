@@ -4,19 +4,22 @@ let
   var g := 2
   var c := 0
   type vector = array of int
-  type personlist = array of person type person = {name: string, age: int}
+  type personlist = array of person type person = { name: string, age: int }
   var mat : vector := vector[n] of 0
 
-  function printArr(mat : vector, col : int) = (
-                                                 for i := 0 to col-1
-                                                 do (puti(mat[i]); print(" "));
-                                                 print("\n") )
+  function printArr(mat : vector, col : int) =
+    (
+      for i := 0 to col-1
+      do (puti(mat[i]); print(" "));
+      print("\n")
+    )
 
   function initArr(mat : vector, n : int) =
     for i := 0 to n-1 do
       mat[i] := n
 
-  function initArr2(mat : vector, n : int, g:int): int = (
+  function initArr2(mat : vector, n : int, g: int): int =
+    (
       for i := 0
       to n-1
       do mat[i] := n;

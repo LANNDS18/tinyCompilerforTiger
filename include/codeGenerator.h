@@ -54,7 +54,7 @@ using Type = llvm::Type;
 using Function = llvm::Function;
 using BasicBlock = llvm::BasicBlock;
 
-class generator {
+class codeGenerator {
 private:
     llvm::LLVMContext context;
     llvm::IRBuilder<> builder;
@@ -139,7 +139,7 @@ private:
     std::vector<Value *> genIndice(const std::vector<int> &ids);
 
 public:
-    generator() : builder(context), module(new llvm::Module("The Module", context)) {
+    codeGenerator() : builder(context), module(new llvm::Module("The Module", context)) {
         initFenv();
         tenv.put("int", Type::getInt64Ty(context));
         tenv.put("string", llvm::Type::getInt8PtrTy(context));

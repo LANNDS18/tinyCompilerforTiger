@@ -1,7 +1,7 @@
-#include "parser.h"
-#include "typeCheck.h"
-#include "generator.h"
-#include "outputAST.h"
+#include "../include/parser.h"
+#include "../include/typeCheck.h"
+#include "../include/codeGenerator.h"
+#include "../include/outputAST.h"
 #include <iostream>
 
 int main(int argc, char *argv[]) {
@@ -18,18 +18,18 @@ int main(int argc, char *argv[]) {
     if (argc == 3 || strcmp(argv[3], "-bc") == 0) {
         typeCheck c(tree);
         c.check();
-        generator g;
+        codeGenerator g;
         g.generate(tree, output_file, 0);
     } else if (strcmp(argv[3], "-ir") == 0) {
         typeCheck c(tree);
         c.check();
-        generator g;
+        codeGenerator g;
         g.generate(tree, output_file, 1);
     } else if (strcmp(argv[3], "-ast") == 0) {
         std::ofstream outfile(output_file);
         std::streambuf *coutbuf = std::cout.rdbuf();
         std::cout.rdbuf(outfile.rdbuf());
-        printExp(tree, 0);
+        ASTPrinter::printExp(tree, 0);
         std::cout.rdbuf(coutbuf);
     } else if (strcmp(argv[3], "-ast+") == 0) {
         std::ofstream outfile(output_file);
@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
         std::cout.rdbuf(outfile.rdbuf());
         typeCheck c(tree);
         c.check();
-        printExp(tree, 0);
+        ASTPrinter::printExp(tree, 0);
         std::cout.rdbuf(coutbuf);
     } else {
         std::cout << "Unknown cmd arg. Expected args are:" << std::endl;

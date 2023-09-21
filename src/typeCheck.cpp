@@ -9,7 +9,7 @@ void typeCheck::error(int line, const std::string& errmsg) {
 }
 
 void typeCheck::check() {
-    check_exp(ast);
+    checkExp(ast);
 }
 
 std::string convertString(std::string s) {
@@ -44,13 +44,13 @@ std::string convertString(std::string s) {
     return convertedStr;
 }
 
-baseTy *typeCheck::check_exp(A_exp *exp) {
+baseTy *typeCheck::checkExp(A_exp *exp) {
     if (!exp) return nullptr;
     using expty = A_exp::type;
     switch (exp->ty) {
         case expty::VarExp: {
             auto e = dynamic_cast<A_VarExp *>(exp);
-            return check_var(e->var);
+            return checkVar(e->var);
         }
 
         case expty::NilExp:
@@ -75,7 +75,7 @@ baseTy *typeCheck::check_exp(A_exp *exp) {
             for (auto argTy: funcTy.second) {
                 // args less than declared
                 if (!list) error(e->pos, "args num mismatch");
-                if (argTy != check_exp(list->head))
+                if (argTy != checkExp(list->head))
                     error(e->pos, "args type mismatch");
                 list = list->tail;
             }
@@ -86,8 +86,8 @@ baseTy *typeCheck::check_exp(A_exp *exp) {
 
         case expty::OpExp: {
             auto e = dynamic_cast<A_OpExp *>(exp);
-            auto l_ty = check_exp(e->left);
-            auto r_ty = check_exp(e->right);
+            auto l_ty = checkExp(e->left);
+            auto r_ty = checkExp(e->right);
             if (l_ty == nullptr || r_ty == nullptr)
                 error(e->pos, "Fail to judge type in left or right or both");
             switch (e->oper) {
@@ -127,7 +127,7 @@ baseTy *typeCheck::check_exp(A_exp *exp) {
                 if (list->head != nullptr) {
                     if (!typefields.count(list->head->name))
                         error(e->pos, e->type + " has no fields named " + list->head->name);
-                    auto initTy = check_exp(list->head->exp);
+                    auto initTy = checkExp(list->head->exp);
                     if (!(initTy->ty == TIG_DTYPE::NIL_TY && typefields[list->head->name]->ty == TIG_DTYPE::RECORD)
                         && initTy != typefields[list->head->name])
                         error(e->pos, "field and parse_expression type mismatch");
@@ -141,7 +141,7 @@ baseTy *typeCheck::check_exp(A_exp *exp) {
             auto list = dynamic_cast<A_SeqExp *>(exp)->seq;
             baseTy *res = nullptr;
             while (list) {
-                res = check_exp(list->head);
+                res = checkExp(list->head);
                 list = list->tail;
             }
             return res;
@@ -149,8 +149,8 @@ baseTy *typeCheck::check_exp(A_exp *exp) {
 
         case expty::AssignExp: {
             auto e = dynamic_cast<A_AssignExp *>(exp);
-            auto varTy = check_var(e->var);
-            auto expTy = check_exp(e->exp);
+            auto varTy = checkVar(e->var);
+            auto expTy = checkExp(e->exp);
             if (varTy != expTy && !(varTy->ty == TIG_DTYPE::RECORD && expTy->ty == TIG_DTYPE::NIL_TY))
                 error(e->pos, "The types at left & right end of the assignment expression do not match");
         }
@@ -158,11 +158,11 @@ baseTy *typeCheck::check_exp(A_exp *exp) {
 
         case expty::IfExp: {
             auto e = dynamic_cast<A_IfExp *>(exp);
-            auto condition_ty = check_exp(e->test);
+            auto condition_ty = checkExp(e->test);
             if (condition_ty == nullptr || condition_ty->ty != TIG_DTYPE::INT)
                 error(e->pos, "The Doc condition for the if statement must be of type int");
-            auto then_ty = check_exp(e->then);
-            auto else_ty = check_exp(e->elsee);
+            auto then_ty = checkExp(e->then);
+            auto else_ty = checkExp(e->elsee);
             if (else_ty == nullptr) return tbl.lookTy("void");
             if (then_ty != else_ty && !(then_ty->ty == TIG_DTYPE::NIL_TY && else_ty->ty == TIG_DTYPE::RECORD ||
                                         then_ty->ty == TIG_DTYPE::RECORD && else_ty->ty == TIG_DTYPE::NIL_TY))
@@ -172,10 +172,10 @@ baseTy *typeCheck::check_exp(A_exp *exp) {
 
         case expty::WhileExp: {
             auto e = dynamic_cast<A_WhileExp *>(exp);
-            auto con_ty = check_exp(e->test);
+            auto con_ty = checkExp(e->test);
             if (con_ty == nullptr || con_ty->ty != TIG_DTYPE::INT)
                 error(e->pos, "The Doc condition for the while statement must be of type int");
-            check_exp(e->body);
+            checkExp(e->body);
         }
             return tbl.lookTy("void");
 
@@ -184,10 +184,10 @@ baseTy *typeCheck::check_exp(A_exp *exp) {
             auto list = e->decs;
             tbl.beginScope();
             while (list) {
-                check_dec(list->head);
+                checkDec(list->head);
                 list = list->tail;
             }
-            auto res = check_exp(e->body);
+            auto res = checkExp(e->body);
             tbl.endScope();
             if (res != nullptr)
                 return res;
@@ -197,11 +197,11 @@ baseTy *typeCheck::check_exp(A_exp *exp) {
             auto e = dynamic_cast<A_ForExp *>(exp);
             tbl.beginScope();
             tbl.decVar(e->var, tbl.lookTy("int"));
-            auto lo_ty = check_exp(e->lo);
-            auto hi_ty = check_exp(e->hi);
+            auto lo_ty = checkExp(e->lo);
+            auto hi_ty = checkExp(e->hi);
             if (lo_ty == nullptr || lo_ty->ty != TIG_DTYPE::INT || hi_ty == nullptr || hi_ty->ty != TIG_DTYPE::INT)
                 error(e->pos, "The traversal range of the for statement should be of type int");
-            check_exp(e->body);
+            checkExp(e->body);
             tbl.endScope();
         }
             return tbl.lookTy("void");
@@ -213,10 +213,10 @@ baseTy *typeCheck::check_exp(A_exp *exp) {
             if (arr_ty->ty != TIG_DTYPE::ARRAY_TY)
                 error(e->pos, e->type + "is not array type");
             auto arr_ty_ = dynamic_cast<arrayTy *>(arr_ty);
-            auto sz_ty = check_exp(e->size);
+            auto sz_ty = checkExp(e->size);
             if (sz_ty == nullptr || sz_ty->ty != TIG_DTYPE::INT)
                 error(e->pos, "Expr in [] are expected to be of type int");
-            auto init_ty = check_exp(e->init);
+            auto init_ty = checkExp(e->init);
             if (tbl.lookTy(arr_ty_->element_type) != init_ty && init_ty != tbl.lookTy("nil"))
                 error(e->pos, "Initialization expr type mismatch ");
             return arr_ty;
@@ -227,7 +227,7 @@ baseTy *typeCheck::check_exp(A_exp *exp) {
     assert(0);
 }
 
-baseTy *typeCheck::check_var(A_var *var) {
+baseTy *typeCheck::checkVar(A_var *var) {
     assert(var != nullptr);
     using t = A_var::type;
     switch (var->ty) {
@@ -240,7 +240,7 @@ baseTy *typeCheck::check_var(A_var *var) {
         }
         case t::FIELD: {
             auto v = dynamic_cast<A_FieldVar *>(var);
-            auto parTy = check_var(v->var);
+            auto parTy = checkVar(v->var);
             if (!parTy || parTy->ty != TIG_DTYPE::RECORD)
                 error(v->pos, "parent type not exist or is not record type in field var");
             auto par = dynamic_cast<recordTy *>(parTy);
@@ -250,10 +250,10 @@ baseTy *typeCheck::check_var(A_var *var) {
         }
         case t::SUBSCRIPT: {
             auto v = dynamic_cast<A_SubscriptVar *>(var);
-            auto parTy = check_var(v->var);
+            auto parTy = checkVar(v->var);
             if (!parTy || parTy->ty != TIG_DTYPE::ARRAY_TY)
                 error(v->pos, "parent type not exist or is not array type in subscript var");
-            auto expTy = check_exp(v->exp);
+            auto expTy = checkExp(v->exp);
             if (!expTy || expTy->ty != TIG_DTYPE::INT)
                 error(v->pos, "Expr in [] are expected to be of type int");
             return tbl.lookTy(dynamic_cast<arrayTy *>(parTy)->element_type);
@@ -262,7 +262,7 @@ baseTy *typeCheck::check_var(A_var *var) {
     assert(0);
 }
 
-void typeCheck::check_dec(A_dec *dec) {
+void typeCheck::checkDec(A_dec *dec) {
     assert(dec != nullptr);
     using dt = A_dec::type;
     switch (dec->ty) {
@@ -270,23 +270,23 @@ void typeCheck::check_dec(A_dec *dec) {
             auto d = dynamic_cast<A_VarDec *>(dec);
             // need type deduction
             if (d->type.empty()) {
-                auto ty = check_exp(d->init);
+                auto ty = checkExp(d->init);
                 if (ty == nullptr || ty->ty == TIG_DTYPE::VOID)
                     error(d->pos, "invalid type declaration.");
                 if (ty->ty == TIG_DTYPE::NIL_TY)
                     error(d->pos, "initializing nil expressions not constrained by record type");
                 tbl.decVar(d->var, ty);
-                // complete the syntax tree, which can simplifie the generator.
+                // complete the syntax tree, which can simplifie the codeGenerator.
                 d->type = ty->name;
             } else {
                 auto expected_ty = tbl.lookTy(d->type);
-                auto init_ty = check_exp(d->init);
+                auto init_ty = checkExp(d->init);
                 if (!expected_ty || !init_ty ||
                     expected_ty != init_ty && !(expected_ty->ty == TIG_DTYPE::RECORD && init_ty->ty == TIG_DTYPE::NIL_TY)) {
                     error(d->pos, "types are not exist or mismatch in var declaration");
                 }
                 tbl.decVar(d->var, expected_ty);
-                // this will erase all the named types, the generator can just ignore named type declarations.
+                // this will erase all the named types, the codeGenerator can just ignore named type declarations.
                 d->type = expected_ty->name;
             }
         }
@@ -409,7 +409,7 @@ void typeCheck::check_dec(A_dec *dec) {
                      argnode != nullptr && argnode->head != nullptr; argnode = argnode->tail) {
                     tbl.decVar(argnode->head->name, tbl.lookTy(argnode->head->type));
                 }
-                check_exp(cur->body);
+                checkExp(cur->body);
                 tbl.endScope();
             }
         }
