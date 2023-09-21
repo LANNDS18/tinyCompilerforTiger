@@ -321,20 +321,20 @@ void printFunctionDecList(A_funcdecList *funcList, int front_space) {
     cout << ")";
 }
 
-void printExpField(A_expField *efield, int front_space) {
+void printExpField(A_expField *expField, int front_space) {
     space(front_space);
-    cout << "Expression-Field(Symbol(" << efield->name << ")," << endl;
-    printExp(efield->exp, front_space + 4);
+    cout << "Expression-Field(Symbol(" << expField->name << ")," << endl;
+    printExp(expField->exp, front_space + 4);
     cout << ")";
 }
 
-void printExpFieldList(A_expFieldList *efieldList, int front_space) {
+void printExpFieldList(A_expFieldList *expFieldList, int front_space) {
     space(front_space);
     cout << "Expression-Field-List(" << endl;
-    while (efieldList != nullptr && efieldList->head != nullptr) {
-        printExpField(efieldList->head, front_space + 4);
+    while (expFieldList != nullptr && expFieldList->head != nullptr) {
+        printExpField(expFieldList->head, front_space + 4);
         cout << "," << endl;
-        efieldList = efieldList->tail;
+        expFieldList = expFieldList->tail;
     }
     space(front_space);
     cout << ")";

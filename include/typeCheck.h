@@ -1,23 +1,23 @@
 #pragma once
 
 #include "abstract.h"
-#include "symtbl.h"
+#include "symbolTab.h"
 
-class tychecker {
+class typeCheck {
 private:
-    symtbl tbl;
+    symbolTable tbl;
     A_exp *ast;
 
-    tgrTy *check_exp(A_exp *exp);
+    baseTy *check_exp(A_exp *exp);
 
-    tgrTy *check_var(A_var *var);
+    baseTy *check_var(A_var *var);
 
     void check_dec(A_dec *dec);
 
     static void error(int line, const std::string &errmsg);
 
 public:
-    tychecker(A_exp *ast_) : ast(ast_) {};
+    explicit typeCheck(A_exp *ast_) : ast(ast_) {};
 
     void check();
 };

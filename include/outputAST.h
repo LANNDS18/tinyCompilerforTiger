@@ -28,6 +28,6 @@ void printFuncDec(A_funcdec *func, int front_space);
 
 void printFunctionDecList(A_funcdecList *funcList, int front_space);
 
-void printExpField(A_expField *efield, int front_space);
+void printExpField(A_expField *expField, int front_space);
 
-void printExpFieldList(A_expFieldList *efieldList, int front_space);
+void printExpFieldList(A_expFieldList *expFieldList, int front_space);

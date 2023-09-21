@@ -1,14 +1,14 @@
-#include "tychecker.h"
+#include "../include/typeCheck.h"
 #include <unordered_set>
 #include <cassert>
 
-void tychecker::error(int line, const std::string& errmsg) {
+void typeCheck::error(int line, const std::string& errmsg) {
     std::cerr << "in line " << line << ":" << std::endl;
     std::cerr << "semantic error: " << errmsg << std::endl;
     exit(1);
 }
 
-void tychecker::check() {
+void typeCheck::check() {
     check_exp(ast);
 }
 
@@ -44,7 +44,7 @@ std::string convertString(std::string s) {
     return convertedStr;
 }
 
-tgrTy *tychecker::check_exp(A_exp *exp) {
+baseTy *typeCheck::check_exp(A_exp *exp) {
     if (!exp) return nullptr;
     using expty = A_exp::type;
     switch (exp->ty) {
@@ -93,22 +93,22 @@ tgrTy *tychecker::check_exp(A_exp *exp) {
             switch (e->oper) {
                 case A_operator::A_eqOp:
                 case A_operator::A_neqOp:
-                    if (l_ty == r_ty || l_ty->ty == TIGTY::NILTY && r_ty->ty == TIGTY::RECORD ||
-                        r_ty->ty == TIGTY::NILTY && l_ty->ty == TIGTY::RECORD);
+                    if (l_ty == r_ty || l_ty->ty == TIG_DTYPE::NIL_TY && r_ty->ty == TIG_DTYPE::RECORD ||
+                        r_ty->ty == TIG_DTYPE::NIL_TY && l_ty->ty == TIG_DTYPE::RECORD);
                     else error(e->pos, "invalid types for compare operation");
                     break;
                 case A_operator::A_geOp:
                 case A_operator::A_gtOp:
                 case A_operator::A_leOp:
                 case A_operator::A_ltOP:
-                    if (l_ty->ty == TIGTY::INT && r_ty->ty == TIGTY::INT ||
-                        l_ty->ty == TIGTY::STRING && r_ty->ty == TIGTY::STRING);
+                    if (l_ty->ty == TIG_DTYPE::INT && r_ty->ty == TIG_DTYPE::INT ||
+                        l_ty->ty == TIG_DTYPE::STRING && r_ty->ty == TIG_DTYPE::STRING);
                     else error(e->pos, "invalid types for compare operation");
                 case A_operator::A_plusOp:
                 case A_operator::A_minusOp:
                 case A_operator::A_timesOp:
                 case A_operator::A_divideOp:
-                    if (l_ty->ty == TIGTY::INT && r_ty->ty == TIGTY::INT);
+                    if (l_ty->ty == TIG_DTYPE::INT && r_ty->ty == TIG_DTYPE::INT);
                     else error(e->pos, "invalid types for int operation");
                 default:
                     break;
@@ -119,7 +119,7 @@ tgrTy *tychecker::check_exp(A_exp *exp) {
         case expty::RecordExp: {
             auto e = dynamic_cast<A_RecordExp *>(exp);
             auto rty = tbl.lookTy(e->type);
-            if (!rty || rty->ty != TIGTY::RECORD)
+            if (!rty || rty->ty != TIG_DTYPE::RECORD)
                 error(e->pos, e->type + "is not record type");
             auto &typefields = dynamic_cast<recordTy *>(rty)->fields;
             auto list = e->fields;
@@ -128,7 +128,7 @@ tgrTy *tychecker::check_exp(A_exp *exp) {
                     if (!typefields.count(list->head->name))
                         error(e->pos, e->type + " has no fields named " + list->head->name);
                     auto initTy = check_exp(list->head->exp);
-                    if (!(initTy->ty == TIGTY::NILTY && typefields[list->head->name]->ty == TIGTY::RECORD)
+                    if (!(initTy->ty == TIG_DTYPE::NIL_TY && typefields[list->head->name]->ty == TIG_DTYPE::RECORD)
                         && initTy != typefields[list->head->name])
                         error(e->pos, "field and parse_expression type mismatch");
                 }
@@ -139,7 +139,7 @@ tgrTy *tychecker::check_exp(A_exp *exp) {
 
         case expty::SeqExp: {
             auto list = dynamic_cast<A_SeqExp *>(exp)->seq;
-            tgrTy *res = nullptr;
+            baseTy *res = nullptr;
             while (list) {
                 res = check_exp(list->head);
                 list = list->tail;
@@ -151,7 +151,7 @@ tgrTy *tychecker::check_exp(A_exp *exp) {
             auto e = dynamic_cast<A_AssignExp *>(exp);
             auto varTy = check_var(e->var);
             auto expTy = check_exp(e->exp);
-            if (varTy != expTy && !(varTy->ty == TIGTY::RECORD && expTy->ty == TIGTY::NILTY))
+            if (varTy != expTy && !(varTy->ty == TIG_DTYPE::RECORD && expTy->ty == TIG_DTYPE::NIL_TY))
                 error(e->pos, "The types at left & right end of the assignment expression do not match");
         }
             return tbl.lookTy("void");
@@ -159,13 +159,13 @@ tgrTy *tychecker::check_exp(A_exp *exp) {
         case expty::IfExp: {
             auto e = dynamic_cast<A_IfExp *>(exp);
             auto condition_ty = check_exp(e->test);
-            if (condition_ty == nullptr || condition_ty->ty != TIGTY::INT)
+            if (condition_ty == nullptr || condition_ty->ty != TIG_DTYPE::INT)
                 error(e->pos, "The Doc condition for the if statement must be of type int");
             auto then_ty = check_exp(e->then);
             auto else_ty = check_exp(e->elsee);
             if (else_ty == nullptr) return tbl.lookTy("void");
-            if (then_ty != else_ty && !(then_ty->ty == TIGTY::NILTY && else_ty->ty == TIGTY::RECORD ||
-                                        then_ty->ty == TIGTY::RECORD && else_ty->ty == TIGTY::NILTY))
+            if (then_ty != else_ty && !(then_ty->ty == TIG_DTYPE::NIL_TY && else_ty->ty == TIG_DTYPE::RECORD ||
+                                        then_ty->ty == TIG_DTYPE::RECORD && else_ty->ty == TIG_DTYPE::NIL_TY))
                 error(e->pos, "The two branches in the if statement are of inconsistent types");
             return then_ty;
         }
@@ -173,7 +173,7 @@ tgrTy *tychecker::check_exp(A_exp *exp) {
         case expty::WhileExp: {
             auto e = dynamic_cast<A_WhileExp *>(exp);
             auto con_ty = check_exp(e->test);
-            if (con_ty == nullptr || con_ty->ty != TIGTY::INT)
+            if (con_ty == nullptr || con_ty->ty != TIG_DTYPE::INT)
                 error(e->pos, "The Doc condition for the while statement must be of type int");
             check_exp(e->body);
         }
@@ -199,7 +199,7 @@ tgrTy *tychecker::check_exp(A_exp *exp) {
             tbl.decVar(e->var, tbl.lookTy("int"));
             auto lo_ty = check_exp(e->lo);
             auto hi_ty = check_exp(e->hi);
-            if (lo_ty == nullptr || lo_ty->ty != TIGTY::INT || hi_ty == nullptr || hi_ty->ty != TIGTY::INT)
+            if (lo_ty == nullptr || lo_ty->ty != TIG_DTYPE::INT || hi_ty == nullptr || hi_ty->ty != TIG_DTYPE::INT)
                 error(e->pos, "The traversal range of the for statement should be of type int");
             check_exp(e->body);
             tbl.endScope();
@@ -210,11 +210,11 @@ tgrTy *tychecker::check_exp(A_exp *exp) {
             auto arr_ty = tbl.lookTy(e->type);
             if (arr_ty == nullptr)
                 error(e->pos, "there is no type named " + e->type);
-            if (arr_ty->ty != TIGTY::ARRAYTY)
+            if (arr_ty->ty != TIG_DTYPE::ARRAY_TY)
                 error(e->pos, e->type + "is not array type");
             auto arr_ty_ = dynamic_cast<arrayTy *>(arr_ty);
             auto sz_ty = check_exp(e->size);
-            if (sz_ty == nullptr || sz_ty->ty != TIGTY::INT)
+            if (sz_ty == nullptr || sz_ty->ty != TIG_DTYPE::INT)
                 error(e->pos, "Expr in [] are expected to be of type int");
             auto init_ty = check_exp(e->init);
             if (tbl.lookTy(arr_ty_->element_type) != init_ty && init_ty != tbl.lookTy("nil"))
@@ -227,7 +227,7 @@ tgrTy *tychecker::check_exp(A_exp *exp) {
     assert(0);
 }
 
-tgrTy *tychecker::check_var(A_var *var) {
+baseTy *typeCheck::check_var(A_var *var) {
     assert(var != nullptr);
     using t = A_var::type;
     switch (var->ty) {
@@ -241,7 +241,7 @@ tgrTy *tychecker::check_var(A_var *var) {
         case t::FIELD: {
             auto v = dynamic_cast<A_FieldVar *>(var);
             auto parTy = check_var(v->var);
-            if (!parTy || parTy->ty != TIGTY::RECORD)
+            if (!parTy || parTy->ty != TIG_DTYPE::RECORD)
                 error(v->pos, "parent type not exist or is not record type in field var");
             auto par = dynamic_cast<recordTy *>(parTy);
             if (!par->fields.count(v->sym))
@@ -251,10 +251,10 @@ tgrTy *tychecker::check_var(A_var *var) {
         case t::SUBSCRIPT: {
             auto v = dynamic_cast<A_SubscriptVar *>(var);
             auto parTy = check_var(v->var);
-            if (!parTy || parTy->ty != TIGTY::ARRAYTY)
+            if (!parTy || parTy->ty != TIG_DTYPE::ARRAY_TY)
                 error(v->pos, "parent type not exist or is not array type in subscript var");
             auto expTy = check_exp(v->exp);
-            if (!expTy || expTy->ty != TIGTY::INT)
+            if (!expTy || expTy->ty != TIG_DTYPE::INT)
                 error(v->pos, "Expr in [] are expected to be of type int");
             return tbl.lookTy(dynamic_cast<arrayTy *>(parTy)->element_type);
         }
@@ -262,7 +262,7 @@ tgrTy *tychecker::check_var(A_var *var) {
     assert(0);
 }
 
-void tychecker::check_dec(A_dec *dec) {
+void typeCheck::check_dec(A_dec *dec) {
     assert(dec != nullptr);
     using dt = A_dec::type;
     switch (dec->ty) {
@@ -271,9 +271,9 @@ void tychecker::check_dec(A_dec *dec) {
             // need type deduction
             if (d->type.empty()) {
                 auto ty = check_exp(d->init);
-                if (ty == nullptr || ty->ty == TIGTY::VOID)
+                if (ty == nullptr || ty->ty == TIG_DTYPE::VOID)
                     error(d->pos, "invalid type declaration.");
-                if (ty->ty == TIGTY::NILTY)
+                if (ty->ty == TIG_DTYPE::NIL_TY)
                     error(d->pos, "initializing nil expressions not constrained by record type");
                 tbl.decVar(d->var, ty);
                 // complete the syntax tree, which can simplifie the generator.
@@ -282,7 +282,7 @@ void tychecker::check_dec(A_dec *dec) {
                 auto expected_ty = tbl.lookTy(d->type);
                 auto init_ty = check_exp(d->init);
                 if (!expected_ty || !init_ty ||
-                    expected_ty != init_ty && !(expected_ty->ty == TIGTY::RECORD && init_ty->ty == TIGTY::NILTY)) {
+                    expected_ty != init_ty && !(expected_ty->ty == TIG_DTYPE::RECORD && init_ty->ty == TIG_DTYPE::NIL_TY)) {
                     error(d->pos, "types are not exist or mismatch in var declaration");
                 }
                 tbl.decVar(d->var, expected_ty);
@@ -309,7 +309,7 @@ void tychecker::check_dec(A_dec *dec) {
                         nameTys[cur->name] = dynamic_cast<A_NameTy *>(cur->ty);
                         break;
                     case A_ty::type::RecordTy: {
-                        std::unordered_map<S_symbol, tgrTy *> fields;
+                        std::unordered_map<S_symbol, baseTy *> fields;
                         tbl.decType(cur->name, new recordTy(fields, cur->name));
                     }
                         break;
@@ -380,7 +380,7 @@ void tychecker::check_dec(A_dec *dec) {
                     error(list->head->pos, "multiple defination of function " + list->head->name);
                 func_names.insert(list->head->name);
                 auto cur = list->head;
-                tgrTy *resTy = tbl.lookTy("void");
+                baseTy *resTy = tbl.lookTy("void");
                 assert(resTy != nullptr);
                 if (cur->result.length() != 0) {
                     resTy = tbl.lookTy(cur->result);
@@ -388,7 +388,7 @@ void tychecker::check_dec(A_dec *dec) {
                         error(cur->pos, "there is no type named " + cur->result);
                     cur->result = resTy->name;
                 } else cur->result = "void";
-                std::list<tgrTy *> argTys;
+                std::list<baseTy *> argTys;
                 for (auto argnode = cur->params;
                      argnode != nullptr && argnode->head != nullptr; argnode = argnode->tail) {
                     auto argTy = tbl.lookTy(argnode->head->type);

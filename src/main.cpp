@@ -1,5 +1,5 @@
 #include "parser.h"
-#include "tychecker.h"
+#include "typeCheck.h"
 #include "generator.h"
 #include "outputAST.h"
 #include <iostream>
@@ -16,12 +16,12 @@ int main(int argc, char *argv[]) {
     FRONTEND::parser p(input_file);
     auto tree = p.parse();
     if (argc == 3 || strcmp(argv[3], "-bc") == 0) {
-        tychecker c(tree);
+        typeCheck c(tree);
         c.check();
         generator g;
         g.generate(tree, output_file, 0);
     } else if (strcmp(argv[3], "-ir") == 0) {
-        tychecker c(tree);
+        typeCheck c(tree);
         c.check();
         generator g;
         g.generate(tree, output_file, 1);
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
         std::ofstream outfile(output_file);
         std::streambuf *coutbuf = std::cout.rdbuf();
         std::cout.rdbuf(outfile.rdbuf());
-        tychecker c(tree);
+        typeCheck c(tree);
         c.check();
         printExp(tree, 0);
         std::cout.rdbuf(coutbuf);

@@ -540,8 +540,7 @@ void generator::genDec(A_dec *dec) {
     }
 }
 
-Function *
-generator::createIntrinsicFunction(const std::string &name, std::vector<Type *> const &arg_tys, Type *ret_ty) {
+Function * generator::createIntrinsicFunction(const std::string &name, std::vector<Type *> const &arg_tys, Type *ret_ty) {
     auto functionType = llvm::FunctionType::get(ret_ty, arg_tys, false);
     auto func = Function::Create(functionType, Function::ExternalLinkage, name, module.get());
     return func;

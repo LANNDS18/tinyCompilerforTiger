@@ -1,6 +1,6 @@
-#include "symtbl.h"
+#include "../include/symbolTab.h"
 
-symtbl::symtbl() {
+symbolTable::symbolTable() {
     auto int_ty = new intTy();
     auto string_ty = new stringTy();
     auto nil_ty = new nilTy();
@@ -26,31 +26,31 @@ symtbl::symtbl() {
     fenv["size"].push_back({int_ty, string_ty});
 }
 
-void symtbl::beginScope() {
+void symbolTable::beginScope() {
     stk.push_back({operation::BEGIN, ""});
 }
 
-void symtbl::endScope() {
+void symbolTable::endScope() {
     // we assume that beginScope will be called before endScope
     while(stk.back().op != operation::BEGIN) {
         auto name = stk.back().name;
         switch (stk.back().op)
         {
-        case operation::VARDEC:
+        case operation::VAR_DEC:
             if(!venv[name].empty()) {
                 venv[name].pop_back();
                 if(venv[name].empty())
                     venv.erase(name);
             }
             break;
-        case operation::TYDEC:
+        case operation::TYPE_DEC:
             if(!tenv[name].empty()) {
                 tenv[name].pop_back();
                 if(tenv[name].empty())
                     tenv.erase(name);
             }
             break;
-        case operation::FUNDEC:
+        case operation::FUN_DEC:
             if(!fenv[name].empty()) {
                 fenv[name].pop_back();
                 if(fenv[name].empty())
@@ -65,45 +65,45 @@ void symtbl::endScope() {
     stk.pop_back();
 }
 
-void symtbl::decType(const S_symbol& sym, tgrTy* ty) {
+void symbolTable::decType(const S_symbol& sym, baseTy* ty) {
     tenv[sym].push_back(ty);
-    stk.push_back({operation::TYDEC, sym});
+    stk.push_back({operation::TYPE_DEC, sym});
 }
 
-void symtbl::decVar(const S_symbol& sym, tgrTy* ty) {
+void symbolTable::decVar(const S_symbol& sym, baseTy* ty) {
     venv[sym].push_back(ty);
-    stk.push_back({operation::VARDEC, sym});
+    stk.push_back({operation::VAR_DEC, sym});
 }
 
-void symtbl::decFunc(const S_symbol& sym, std::list<tgrTy*> &args, tgrTy* retTy) {
+void symbolTable::decFunc(const S_symbol& sym, std::list<baseTy*> &args, baseTy* retTy) {
     auto args_ = args;
     args_.push_front(retTy);
     fenv[sym].push_back(std::move(args_));
-    stk.push_back({operation::FUNDEC, sym});
+    stk.push_back({operation::FUN_DEC, sym});
 }
 
-tgrTy* symtbl::lookTy(const S_symbol& ty) {
+baseTy* symbolTable::lookTy(const S_symbol& ty) {
     if(tenv.count(ty))
         return tenv[ty].back();
     return nullptr;
 }
 
-tgrTy* symtbl::lookVar(const S_symbol& name) {
+baseTy* symbolTable::lookVar(const S_symbol& name) {
     if(venv.count(name))
         return venv[name].back();
     return nullptr;
 }
 
-std::pair<tgrTy*, std::list<tgrTy*>> symtbl::lookFunc(const S_symbol& name) {
+std::pair<baseTy*, std::list<baseTy*>> symbolTable::lookFunc(const S_symbol& name) {
     if(fenv.count(name)) {
         auto list = fenv[name].back();
-        tgrTy *retType = list.front();
+        baseTy *retType = list.front();
         list.pop_front();
         return {retType, list};
     }
     return {nullptr, {}};
 }
 
-bool symtbl::ExistTy(const S_symbol& ty) {
+bool symbolTable::ExistTy(const S_symbol& ty) {
     return tenv.count(ty);
 }

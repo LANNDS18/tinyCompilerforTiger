@@ -126,7 +126,7 @@ private:
 
     A_ty *getFieldTypeDec(const std::string &name, A_RecordTy *ty);
 
-    Value *convertTypedNil(Type *type);
+    static Value *convertTypedNil(Type *type);
 
     Value *convertRightValue(Value *leftValue);
 
