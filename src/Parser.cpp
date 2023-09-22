@@ -8,7 +8,7 @@ namespace FRONTEND {
 
     Token Parser::popToken() {
         if (q.empty())
-            return lex.next();
+            return lex.tokenizeNext();
         auto tk = q.front();
         q.pop();
         return tk;

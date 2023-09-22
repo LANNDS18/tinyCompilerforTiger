@@ -200,7 +200,7 @@ BaseTy *TypeChecker::checkExp(A_exp *exp) {
             auto lo_ty = checkExp(e->lo);
             auto hi_ty = checkExp(e->hi);
             if (lo_ty == nullptr || lo_ty->ty != TIG_DTYPE::INT || hi_ty == nullptr || hi_ty->ty != TIG_DTYPE::INT)
-                error(e->pos, "The traversal range of the for statement should be of type int");
+                error(e->pos, "The range of the for statement should be of type int");
             checkExp(e->body);
             symbolTable.endScope();
         }

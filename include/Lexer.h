@@ -84,6 +84,6 @@ namespace FRONTEND {
 
         explicit Lexer(const std::string& src_file);
 
-        Token next();
+        Token tokenizeNext();
     };
 }

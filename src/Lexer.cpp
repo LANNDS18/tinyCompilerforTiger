@@ -195,7 +195,7 @@ namespace FRONTEND {
     }
 
 
-    Token Lexer::next() {
+    Token Lexer::tokenizeNext() {
         std::string next_ = next_word();
         if (tokenizerMap.count(next_))
             return {tokenizerMap[next_], line_cnt};

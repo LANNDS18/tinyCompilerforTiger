@@ -1,6 +1,5 @@
 #pragma once
 
-#include "llvm/ADT/STLExtras.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Function.h"
@@ -49,7 +48,7 @@ public:
     void begin() { q.emplace_back(""); };
 };
 
-using Value = llvm::Value;
+
 using Type = llvm::Type;
 using Function = llvm::Function;
 using BasicBlock = llvm::BasicBlock;
@@ -61,43 +60,43 @@ private:
     std::unique_ptr<llvm::Module> module;
     std::vector<BasicBlock *> loop_stack;
 
-    tbl<Value> venv;
+    tbl<llvm::Value> venv;
     tbl<Type> tenv;
     tbl<A_type> tdecs;
     tbl<A_VarDec> vdecs;
     tbl<Function> fenv;
 
-    Value *genExp(A_exp *exp);
+    llvm::Value *genExp(A_exp *exp);
 
-    Value *genVarExp(A_VarExp *exp);
+    llvm::Value *genVarExp(A_VarExp *exp);
 
-    Value *genNilExp();
+    llvm::Value *genNilExp();
 
-    Value *genIntExp(A_IntExp *exp);
+    llvm::Value *genIntExp(A_IntExp *exp);
 
-    Value *genStringExp(A_StringExp *exp);
+    llvm::Value *genStringExp(A_StringExp *exp);
 
-    Value *genCallExp(A_CallExp *exp);
+    llvm::Value *genCallExp(A_CallExp *exp);
 
-    Value *genOpExp(A_OpExp *exp);
+    llvm::Value *genOpExp(A_OpExp *exp);
 
-    Value *genRecordExp(A_RecordExp *exp);
+    llvm::Value *genRecordExp(A_RecordExp *exp);
 
-    Value *genSeqExp(A_SeqExp *exp);
+    llvm::Value *genSeqExp(A_SeqExp *exp);
 
-    Value *genAssignExp(A_AssignExp *exp);
+    llvm::Value *genAssignExp(A_AssignExp *exp);
 
-    Value *genIfExp(A_IfExp *exp);
+    llvm::Value *genIfExp(A_IfExp *exp);
 
-    Value *genWhileExp(A_WhileExp *exp);
+    llvm::Value *genWhileExp(A_WhileExp *exp);
 
-    Value *genLetExp(A_LetExp *exp);
+    llvm::Value *genLetExp(A_LetExp *exp);
 
-    Value *genForExp(A_ForExp *exp);
+    llvm::Value *genForExp(A_ForExp *exp);
 
-    Value *genArrayExp(A_ArrayExp *exp);
+    llvm::Value *genArrayExp(A_ArrayExp *exp);
 
-    Value *genBreakExp(A_BreakExp *exp);
+    llvm::Value *genBreakExp(A_BreakExp *exp);
 
     void genVarDec(A_VarDec *dec);
 
@@ -114,11 +113,11 @@ private:
 
     void initFenv();
 
-    Value *getStrConstant(std::string &str);
+    llvm::Value *getStrConstant(std::string &str);
 
-    void createNamedValue(std::string name, Value *value, Type *type);
+    void createNamedValue(std::string name, llvm::Value *value, Type *type);
 
-    Value *getNamedValue(std::string name);
+    llvm::Value *getNamedValue(std::string name);
 
     static int getIdxInRecordTy(const std::string &name, A_RecordTy *ty);
 
@@ -126,17 +125,17 @@ private:
 
     A_type *getFieldTypeDec(const std::string &name, A_RecordTy *ty);
 
-    static Value *convertTypedNil(Type *type);
+    static llvm::Value *convertTypedNil(Type *type);
 
-    Value *convertRightValue(Value *leftValue);
+    llvm::Value *convertRightValue(llvm::Value *leftValue);
 
     Function *createIntrinsicFunction(const std::string &name, std::vector<Type *> const &arg_tys, Type *ret_ty);
 
-    std::pair<Value *, A_type *> genLeftValue(A_var *vare);
+    std::pair<llvm::Value *, A_type *> genLeftValue(A_var *vare);
 
     Type *NilTy = llvm::PointerType::getUnqual(Type::getVoidTy(context));
 
-    std::vector<Value *> genIndice(const std::vector<int> &ids);
+    std::vector<llvm::Value *> genIndice(const std::vector<int> &ids);
 
 public:
     CodeGenerator() : builder(context), module(new llvm::Module("The Module", context)) {
