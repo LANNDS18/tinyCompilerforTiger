@@ -1,16 +1,16 @@
 #include "../include/abstract.h"
-#include "../include/outputAST.h"
+#include "../include/ASTPrinter.h"
 #include <iostream>
 
 using namespace std;
 
-void ASTPrinter::space(int n) {
+void ASTPrinter::printSpace(int n) {
     std::string str(n, ' ');
     std::cout << str;
 }
 
 void ASTPrinter::printExp(A_exp *exp, int front_space) {
-    space(front_space);
+    printSpace(front_space);
     if (exp == nullptr) return;
     switch (exp->ty) {
         case A_exp::type::NilExp:
@@ -74,7 +74,7 @@ void ASTPrinter::printExp(A_exp *exp, int front_space) {
         case A_exp::type::LetExp: {
             auto e = dynamic_cast<A_LetExp *>(exp);
             cout << "LetExp(" << endl;
-            print_decList(e->decs, front_space + 4);
+            printDecList(e->decs, front_space + 4);
             cout << "," << endl;
             printExp(e->body, front_space + 4);
             cout << ")";
@@ -163,19 +163,19 @@ void ASTPrinter::printExp(A_exp *exp, int front_space) {
 }
 
 void ASTPrinter::printExpList(A_expList *expList, int front_space) {
-    space(front_space);
+    printSpace(front_space);
     cout << "ExpList(" << endl;
     while (expList != nullptr && expList->head != nullptr) {
         printExp(expList->head, front_space + 4);
         cout << "," << endl;
         expList = expList->tail;
     }
-    space(front_space);
+    printSpace(front_space);
     cout << ")";
 }
 
 void ASTPrinter::printVar(A_var *var, int front_space) {
-    space(front_space);
+    printSpace(front_space);
     switch (var->ty) {
         case A_var::type::SIMPLE: {
             auto v = dynamic_cast<A_SimpleVar *>(var);
@@ -187,7 +187,7 @@ void ASTPrinter::printVar(A_var *var, int front_space) {
             cout << "FieldVar(" << endl;
             printVar(v->var, front_space + 4);
             cout << "," << endl;
-            space(front_space + 4);
+            printSpace(front_space + 4);
             cout << "Symbol(" << v->sym << "))";
         }
             break;
@@ -202,8 +202,8 @@ void ASTPrinter::printVar(A_var *var, int front_space) {
     }
 }
 
-void ASTPrinter::print_dec(A_dec *dec, int front_space) {
-    space(front_space);
+void ASTPrinter::printDec(A_dec *dec, int front_space) {
+    printSpace(front_space);
     switch (dec->ty) {
         case A_dec::type::VARDEC: {
             auto d = dynamic_cast<A_VarDec *>(dec);
@@ -229,32 +229,32 @@ void ASTPrinter::print_dec(A_dec *dec, int front_space) {
     }
 }
 
-void ASTPrinter::print_decList(A_decList *decList, int front_space) {
-    space(front_space);
+void ASTPrinter::printDecList(A_decList *decList, int front_space) {
+    printSpace(front_space);
     cout << "DecList(" << endl;
     while (decList != nullptr && decList->head != nullptr) {
-        print_dec(decList->head, front_space + 4);
+        printDec(decList->head, front_space + 4);
         cout << "," << endl;
         decList = decList->tail;
     }
-    space(front_space);
+    printSpace(front_space);
     cout << ")";
 }
 
-void ASTPrinter::print_ty(A_ty *ty, int front_space) {
-    space(front_space);
+void ASTPrinter::printType(A_type *ty, int front_space) {
+    printSpace(front_space);
     switch (ty->ty) {
-        case A_ty::type::NameTy: {
+        case A_type::type::NameTy: {
             auto t = dynamic_cast<A_NameTy *>(ty);
             cout << "NameTy(Symbol(" << t->type << "))";
         }
             break;
-        case A_ty::type::ArrayTy: {
+        case A_type::type::ArrayTy: {
             auto t = dynamic_cast<A_ArrayTy *>(ty);
             cout << "ArrayTy(Symbol(" << t->array << "))";
         }
             break;
-        case A_ty::type::RecordTy: {
+        case A_type::type::RecordTy: {
             auto t = dynamic_cast<A_RecordTy *>(ty);
             cout << "RecordTy(" << endl;
             printFieldList(t->record, front_space + 4);
@@ -265,43 +265,43 @@ void ASTPrinter::print_ty(A_ty *ty, int front_space) {
 }
 
 void ASTPrinter::printField(A_field *ty, int front_space) {
-    space(front_space);
+    printSpace(front_space);
     cout << "Field(Symbol(" << ty->name << "),Symbol(" << ty->type << "))";
 }
 
 void ASTPrinter::printFieldList(A_fieldList *fieldList, int front_space) {
-    space(front_space);
+    printSpace(front_space);
     cout << "FieldList(" << endl;
     while (fieldList != nullptr && fieldList->head != nullptr) {
         printField(fieldList->head, front_space + 4);
         cout << "," << endl;
         fieldList = fieldList->tail;
     }
-    space(front_space);
+    printSpace(front_space);
     cout << ")";
 }
 
 void ASTPrinter::printTyDeclareName(A_TyDeclareName *ty, int front_space) {
-    space(front_space);
+    printSpace(front_space);
     cout << "TypeDeclareName(Symbol(" << ty->name << ")," << endl;
-    print_ty(ty->ty, front_space + 4);
+    printType(ty->ty, front_space + 4);
     cout << ")";
 }
 
 void ASTPrinter::printNameTypeList(A_TyDeclareNameList *tyList, int front_space) {
-    space(front_space);
+    printSpace(front_space);
     cout << "TypeDeclareNameList(" << endl;
     while (tyList != nullptr && tyList->head != nullptr) {
         printTyDeclareName(tyList->head, front_space + 4);
         cout << "," << endl;
         tyList = tyList->tail;
     }
-    space(front_space);
+    printSpace(front_space);
     cout << ")";
 }
 
 void ASTPrinter::printFuncDec(A_funcDec *func, int front_space) {
-    space(front_space);
+    printSpace(front_space);
     cout << "FunctionDec(Symbol(" << func->name << "),Symbol(" << func->result << ")," << endl;
     printFieldList(func->params, front_space + 4);
     cout << "," << endl;
@@ -310,32 +310,32 @@ void ASTPrinter::printFuncDec(A_funcDec *func, int front_space) {
 }
 
 void ASTPrinter::printFunctionDecList(A_funcDecList *funcList, int front_space) {
-    space(front_space);
+    printSpace(front_space);
     cout << "FunctionDecList(" << endl;
     while (funcList != nullptr && funcList->head != nullptr) {
         printFuncDec(funcList->head, front_space + 4);
         cout << "," << endl;
         funcList = funcList->tail;
     }
-    space(front_space);
+    printSpace(front_space);
     cout << ")";
 }
 
 void ASTPrinter::printExpField(A_expField *expField, int front_space) {
-    space(front_space);
+    printSpace(front_space);
     cout << "Expression-Field(Symbol(" << expField->name << ")," << endl;
     printExp(expField->exp, front_space + 4);
     cout << ")";
 }
 
 void ASTPrinter::printExpFieldList(A_expFieldList *expFieldList, int front_space) {
-    space(front_space);
+    printSpace(front_space);
     cout << "Expression-Field-List(" << endl;
     while (expFieldList != nullptr && expFieldList->head != nullptr) {
         printExpField(expFieldList->head, front_space + 4);
         cout << "," << endl;
         expFieldList = expFieldList->tail;
     }
-    space(front_space);
+    printSpace(front_space);
     cout << ")";
 }

@@ -1,14 +1,14 @@
 #pragma once
 
-#include "token.h"
+#include "Token.h"
 #include <unordered_map>
 #include <unordered_set>
 #include <fstream>
 
 namespace FRONTEND {
-    class lexer {
+    class Lexer {
     private:
-        std::unordered_map<std::string, int> convert{
+        std::unordered_map<std::string, int> tokenizerMap{
                 {{"while"},    1},
                 {{"for"},      2},
                 {{"to"},       3},
@@ -78,12 +78,12 @@ namespace FRONTEND {
         void handle_multi_line_comment();
 
     public:
-        lexer() = delete;
+        Lexer() = delete;
 
-        ~lexer();
+        ~Lexer();
 
-        explicit lexer(const std::string& src_file);
+        explicit Lexer(const std::string& src_file);
 
-        token next();
+        Token next();
     };
 }

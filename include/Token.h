@@ -51,28 +51,28 @@ namespace FRONTEND {
     const int INT_LITERAL = 44;
     const int STR_LITERAL = 45;
 
-    class token {
+    class Token {
     public:
         const int type;
         const std::string val;
         const int line;
 
-        token() = delete;
+        Token() = delete;
 
-        token(int t, int l) : type(t), line(l) {};
+        Token(int t, int l) : type(t), line(l) {};
 
-        token(int t, std::string &v, int l) : type(t), val(v), line(l) {};
+        Token(int t, std::string &v, int l) : type(t), val(v), line(l) {};
 
-        token(int t, std::string &&v, int l) : type(t), val(v), line(l) {};
+        Token(int t, std::string &&v, int l) : type(t), val(v), line(l) {};
 
         std::string to_str();
 
-        ~token() = default;
+        ~Token() = default;
     };
 
 
 // for debug
-    inline std::string token::to_str() {
+    inline std::string Token::to_str() {
         std::string ans;
         switch (type) {
             case 1:

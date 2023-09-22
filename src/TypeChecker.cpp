@@ -44,7 +44,7 @@ std::string convertString(std::string s) {
     return convertedStr;
 }
 
-baseTy *TypeChecker::checkExp(A_exp *exp) {
+BaseTy *TypeChecker::checkExp(A_exp *exp) {
     if (!exp) return nullptr;
     using expty = A_exp::type;
     switch (exp->ty) {
@@ -93,8 +93,8 @@ baseTy *TypeChecker::checkExp(A_exp *exp) {
             switch (e->aOperator) {
                 case A_operator::A_eqOp:
                 case A_operator::A_neqOp:
-                    if (l_ty == r_ty || l_ty->ty == TIG_DTYPE::NIL_TY && r_ty->ty == TIG_DTYPE::RECORD ||
-                        r_ty->ty == TIG_DTYPE::NIL_TY && l_ty->ty == TIG_DTYPE::RECORD);
+                    if (l_ty == r_ty || l_ty->ty == TIG_DTYPE::NIL && r_ty->ty == TIG_DTYPE::RECORD ||
+                        r_ty->ty == TIG_DTYPE::NIL && l_ty->ty == TIG_DTYPE::RECORD);
                     else error(e->pos, "invalid types for compare operation");
                     break;
                 case A_operator::A_geOp:
@@ -121,14 +121,14 @@ baseTy *TypeChecker::checkExp(A_exp *exp) {
             auto rty = symbolTable.lookTy(e->type);
             if (!rty || rty->ty != TIG_DTYPE::RECORD)
                 error(e->pos, e->type + "is not record type");
-            auto &typefields = dynamic_cast<recordTy *>(rty)->fields;
+            auto &typefields = dynamic_cast<RecordTy *>(rty)->fields;
             auto list = e->fields;
             while (list != nullptr) {
                 if (list->head != nullptr) {
                     if (!typefields.count(list->head->name))
                         error(e->pos, e->type + " has no fields named " + list->head->name);
                     auto initTy = checkExp(list->head->exp);
-                    if (!(initTy->ty == TIG_DTYPE::NIL_TY && typefields[list->head->name]->ty == TIG_DTYPE::RECORD)
+                    if (!(initTy->ty == TIG_DTYPE::NIL && typefields[list->head->name]->ty == TIG_DTYPE::RECORD)
                         && initTy != typefields[list->head->name])
                         error(e->pos, "field and parse_expression type mismatch");
                 }
@@ -139,7 +139,7 @@ baseTy *TypeChecker::checkExp(A_exp *exp) {
 
         case expty::SeqExp: {
             auto list = dynamic_cast<A_SeqExp *>(exp)->seq;
-            baseTy *res = nullptr;
+            BaseTy *res = nullptr;
             while (list) {
                 res = checkExp(list->head);
                 list = list->tail;
@@ -151,7 +151,7 @@ baseTy *TypeChecker::checkExp(A_exp *exp) {
             auto e = dynamic_cast<A_AssignExp *>(exp);
             auto varTy = checkVar(e->var);
             auto expTy = checkExp(e->exp);
-            if (varTy != expTy && !(varTy->ty == TIG_DTYPE::RECORD && expTy->ty == TIG_DTYPE::NIL_TY))
+            if (varTy != expTy && !(varTy->ty == TIG_DTYPE::RECORD && expTy->ty == TIG_DTYPE::NIL))
                 error(e->pos, "The types at left & right end of the assignment expression do not match");
         }
             return symbolTable.lookTy("void");
@@ -164,8 +164,8 @@ baseTy *TypeChecker::checkExp(A_exp *exp) {
             auto then_ty = checkExp(e->then);
             auto else_ty = checkExp(e->elsee);
             if (else_ty == nullptr) return symbolTable.lookTy("void");
-            if (then_ty != else_ty && !(then_ty->ty == TIG_DTYPE::NIL_TY && else_ty->ty == TIG_DTYPE::RECORD ||
-                                        then_ty->ty == TIG_DTYPE::RECORD && else_ty->ty == TIG_DTYPE::NIL_TY))
+            if (then_ty != else_ty && !(then_ty->ty == TIG_DTYPE::NIL && else_ty->ty == TIG_DTYPE::RECORD ||
+                                        then_ty->ty == TIG_DTYPE::RECORD && else_ty->ty == TIG_DTYPE::NIL))
                 error(e->pos, "The two branches in the if statement are of inconsistent types");
             return then_ty;
         }
@@ -210,9 +210,9 @@ baseTy *TypeChecker::checkExp(A_exp *exp) {
             auto arr_ty = symbolTable.lookTy(e->type);
             if (arr_ty == nullptr)
                 error(e->pos, "there is no type named " + e->type);
-            if (arr_ty->ty != TIG_DTYPE::ARRAY_TY)
+            if (arr_ty->ty != TIG_DTYPE::ARRAY)
                 error(e->pos, e->type + "is not array type");
-            auto arr_ty_ = dynamic_cast<arrayTy *>(arr_ty);
+            auto arr_ty_ = dynamic_cast<ArrayTy *>(arr_ty);
             auto sz_ty = checkExp(e->size);
             if (sz_ty == nullptr || sz_ty->ty != TIG_DTYPE::INT)
                 error(e->pos, "Expr in [] are expected to be of type int");
@@ -227,7 +227,7 @@ baseTy *TypeChecker::checkExp(A_exp *exp) {
     assert(0);
 }
 
-baseTy *TypeChecker::checkVar(A_var *var) {
+BaseTy *TypeChecker::checkVar(A_var *var) {
     assert(var != nullptr);
     using t = A_var::type;
     switch (var->ty) {
@@ -243,7 +243,7 @@ baseTy *TypeChecker::checkVar(A_var *var) {
             auto parTy = checkVar(v->var);
             if (!parTy || parTy->ty != TIG_DTYPE::RECORD)
                 error(v->pos, "parent type not exist or is not record type in field var");
-            auto par = dynamic_cast<recordTy *>(parTy);
+            auto par = dynamic_cast<RecordTy *>(parTy);
             if (!par->fields.count(v->sym))
                 error(v->pos, "parent type has no field named " + v->sym);
             return par->fields[v->sym];
@@ -251,12 +251,12 @@ baseTy *TypeChecker::checkVar(A_var *var) {
         case t::SUBSCRIPT: {
             auto v = dynamic_cast<A_SubscriptVar *>(var);
             auto parTy = checkVar(v->var);
-            if (!parTy || parTy->ty != TIG_DTYPE::ARRAY_TY)
+            if (!parTy || parTy->ty != TIG_DTYPE::ARRAY)
                 error(v->pos, "parent type not exist or is not array type in subscript var");
             auto expTy = checkExp(v->exp);
             if (!expTy || expTy->ty != TIG_DTYPE::INT)
                 error(v->pos, "Expr in [] are expected to be of type int");
-            return symbolTable.lookTy(dynamic_cast<arrayTy *>(parTy)->element_type);
+            return symbolTable.lookTy(dynamic_cast<ArrayTy *>(parTy)->element_type);
         }
     }
     assert(0);
@@ -272,7 +272,7 @@ void TypeChecker::checkDec(A_dec *dec) {
                 auto ty = checkExp(d->init);
                 if (ty == nullptr || ty->ty == TIG_DTYPE::VOID)
                     error(d->pos, "invalid type declaration.");
-                if (ty->ty == TIG_DTYPE::NIL_TY)
+                if (ty->ty == TIG_DTYPE::NIL)
                     error(d->pos, "initializing nil expressions not constrained by record type");
                 symbolTable.decVar(d->var, ty);
                 d->type = ty->name;
@@ -280,11 +280,11 @@ void TypeChecker::checkDec(A_dec *dec) {
                 auto expected_ty = symbolTable.lookTy(d->type);
                 auto init_ty = checkExp(d->init);
                 if (!expected_ty || !init_ty ||
-                    expected_ty != init_ty && !(expected_ty->ty == TIG_DTYPE::RECORD && init_ty->ty == TIG_DTYPE::NIL_TY)) {
+                    expected_ty != init_ty && !(expected_ty->ty == TIG_DTYPE::RECORD && init_ty->ty == TIG_DTYPE::NIL)) {
                     error(d->pos, "types are not exist or mismatch in var declaration");
                 }
                 symbolTable.decVar(d->var, expected_ty);
-                // this will erase all the named types, the codeGenerator can just ignore named type declarations.
+                // this will erase all the named types, the CodeGenerator can just ignore named type declarations.
                 d->type = expected_ty->name;
             }
         }
@@ -300,15 +300,15 @@ void TypeChecker::checkDec(A_dec *dec) {
                     error(list->head->ty->pos, "multiple definition on type " + cur->name);
                 ty_names.insert(cur->name);
                 switch (cur->ty->ty) {
-                    case A_ty::type::ArrayTy:
-                        symbolTable.decType(cur->name, new arrayTy("", cur->name));
+                    case A_type::type::ArrayTy:
+                        symbolTable.decType(cur->name, new ArrayTy("", cur->name));
                         break;
-                    case A_ty::type::NameTy:
+                    case A_type::type::NameTy:
                         nameTys[cur->name] = dynamic_cast<A_NameTy *>(cur->ty);
                         break;
-                    case A_ty::type::RecordTy: {
-                        std::unordered_map<S_symbol, baseTy *> fields;
-                        symbolTable.decType(cur->name, new recordTy(fields, cur->name));
+                    case A_type::type::RecordTy: {
+                        std::unordered_map<S_symbol, BaseTy *> fields;
+                        symbolTable.decType(cur->name, new RecordTy(fields, cur->name));
                     }
                         break;
                 }
@@ -336,21 +336,21 @@ void TypeChecker::checkDec(A_dec *dec) {
             for (; list != nullptr; list = list->tail) {
                 auto cur = list->head;
                 switch (cur->ty->ty) {
-                    case A_ty::type::ArrayTy: {
+                    case A_type::type::ArrayTy: {
                         auto arrTy = dynamic_cast<A_ArrayTy *>(cur->ty);
                         auto eleTy = symbolTable.lookTy(dynamic_cast<A_ArrayTy *>(cur->ty)->array);
                         if (!symbolTable.lookTy(arrTy->array))
                             error(cur->ty->pos, "there is no type named " + arrTy->array);
-                        auto ty = dynamic_cast<arrayTy *>(symbolTable.lookTy(cur->name));
+                        auto ty = dynamic_cast<ArrayTy *>(symbolTable.lookTy(cur->name));
                         assert(ty != nullptr);
                         // erase named types
                         arrTy->array = eleTy->name;
                         ty->element_type = eleTy->name;
                     }
                         break;
-                    case A_ty::type::RecordTy: {
+                    case A_type::type::RecordTy: {
                         auto fieldList = dynamic_cast<A_RecordTy *>(cur->ty)->record;
-                        auto ty = dynamic_cast<recordTy *>(symbolTable.lookTy(cur->name));
+                        auto ty = dynamic_cast<RecordTy *>(symbolTable.lookTy(cur->name));
                         assert(ty != nullptr);
                         for (; fieldList != nullptr; fieldList = fieldList->tail) {
                             auto fieldTy = symbolTable.lookTy(fieldList->head->type);
@@ -362,7 +362,7 @@ void TypeChecker::checkDec(A_dec *dec) {
                         }
                     }
                         break;
-                    case A_ty::type::NameTy:
+                    case A_type::type::NameTy:
                         break;
                 }
             }
@@ -378,7 +378,7 @@ void TypeChecker::checkDec(A_dec *dec) {
                     error(list->head->pos, "multiple defination of function " + list->head->name);
                 func_names.insert(list->head->name);
                 auto cur = list->head;
-                baseTy *resTy = symbolTable.lookTy("void");
+                BaseTy *resTy = symbolTable.lookTy("void");
                 assert(resTy != nullptr);
                 if (cur->result.length() != 0) {
                     resTy = symbolTable.lookTy(cur->result);
@@ -386,7 +386,7 @@ void TypeChecker::checkDec(A_dec *dec) {
                         error(cur->pos, "there is no type named " + cur->result);
                     cur->result = resTy->name;
                 } else cur->result = "void";
-                std::list<baseTy *> argTys;
+                std::list<BaseTy *> argTys;
                 for (auto argnode = cur->params;
                      argnode != nullptr && argnode->head != nullptr; argnode = argnode->tail) {
                     auto argTy = symbolTable.lookTy(argnode->head->type);

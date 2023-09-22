@@ -1,7 +1,7 @@
-#include "../include/parser.h"
+#include "../include/Parser.h"
 #include "../include/TypeChecker.h"
-#include "../include/codeGenerator.h"
-#include "../include/outputAST.h"
+#include "../include/CodeGenerator.h"
+#include "../include/ASTPrinter.h"
 #include <iostream>
 
 int main(int argc, char *argv[]) {
@@ -13,32 +13,32 @@ int main(int argc, char *argv[]) {
     if (argc >= 3) {
         output_file = std::string{argv[2]};
     }
-    FRONTEND::parser p(input_file);
+    FRONTEND::Parser p(input_file);
     auto tree = p.parse();
     if (argc == 3 || strcmp(argv[3], "-bc") == 0) {
         TypeChecker c(tree);
         c.check();
-        codeGenerator g;
+        CodeGenerator g;
         g.generate(tree, output_file, 0);
     } else if (strcmp(argv[3], "-ir") == 0) {
         TypeChecker c(tree);
         c.check();
-        codeGenerator g;
+        CodeGenerator g;
         g.generate(tree, output_file, 1);
     } else if (strcmp(argv[3], "-ast") == 0) {
         std::ofstream outfile(output_file);
-        std::streambuf *coutbuf = std::cout.rdbuf();
+        std::streambuf *outBuffer = std::cout.rdbuf();
         std::cout.rdbuf(outfile.rdbuf());
         ASTPrinter::printExp(tree, 0);
-        std::cout.rdbuf(coutbuf);
+        std::cout.rdbuf(outBuffer);
     } else if (strcmp(argv[3], "-ast+") == 0) {
         std::ofstream outfile(output_file);
-        std::streambuf *coutbuf = std::cout.rdbuf();
+        std::streambuf *outBuffer = std::cout.rdbuf();
         std::cout.rdbuf(outfile.rdbuf());
         TypeChecker c(tree);
         c.check();
         ASTPrinter::printExp(tree, 0);
-        std::cout.rdbuf(coutbuf);
+        std::cout.rdbuf(outBuffer);
     } else {
         std::cout << "Unknown cmd arg. Expected args are:" << std::endl;
         std::cout << "-bc : generate llvm bytecode." << std::endl;

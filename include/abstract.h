@@ -4,7 +4,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "token.h"
+#include "Token.h"
 
 // Enumeration representing various arithmetic and comparison operators.
 enum class A_operator {
@@ -28,7 +28,7 @@ using S_symbol = std::string;    // Alias for symbols (typically variable names 
 struct A_var;
 struct A_exp;
 struct A_dec;
-struct A_ty;
+struct A_type;
 struct A_field;
 struct A_fieldList;
 struct A_expList;
@@ -307,7 +307,7 @@ public:
 
 
 // Base class for all types in the language.
-struct A_ty {
+struct A_type {
 public:
     enum class type {
         NameTy,
@@ -317,34 +317,34 @@ public:
     A_pos pos;
     type ty;
 
-    A_ty(A_pos p, type t) : pos(p), ty(t) {};
+    A_type(A_pos p, type t) : pos(p), ty(t) {};
 
-    virtual ~A_ty() = default;
+    virtual ~A_type() = default;
 };
 
 
-struct A_NameTy : public A_ty {
+struct A_NameTy : public A_type {
 public:
     S_symbol type;
 
-    A_NameTy(A_pos p, S_symbol type_) : A_ty(p, type::NameTy), type(std::move(type_)) {};
+    A_NameTy(A_pos p, S_symbol type_) : A_type(p, type::NameTy), type(std::move(type_)) {};
 };
 
 
-struct A_RecordTy : public A_ty {
+struct A_RecordTy : public A_type {
 public:
     A_fieldList *record;
 
     A_RecordTy(A_pos p, A_fieldList *record_) :
-            A_ty(p, type::RecordTy), record(record_) {};
+            A_type(p, type::RecordTy), record(record_) {};
 };
 
 
-struct A_ArrayTy : public A_ty {
+struct A_ArrayTy : public A_type {
 public:
     S_symbol array;
 
-    A_ArrayTy(A_pos p, S_symbol array_) : A_ty(p, type::ArrayTy), array(std::move(array_)) {};
+    A_ArrayTy(A_pos p, S_symbol array_) : A_type(p, type::ArrayTy), array(std::move(array_)) {};
 };
 
 
@@ -413,9 +413,9 @@ public:
 struct A_TyDeclareName {
 public:
     S_symbol name;
-    A_ty *ty;
+    A_type *ty;
 
-    A_TyDeclareName(S_symbol name_, A_ty *ty_) : name(std::move(name_)), ty(ty_) {};
+    A_TyDeclareName(S_symbol name_, A_type *ty_) : name(std::move(name_)), ty(ty_) {};
 };
 
 struct A_TyDeclareNameList {

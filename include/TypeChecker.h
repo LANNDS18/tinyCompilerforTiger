@@ -8,9 +8,9 @@ private:
     SymbolTable symbolTable;
     A_exp *ast;
 
-    baseTy *checkExp(A_exp *exp);
+    BaseTy *checkExp(A_exp *exp);
 
-    baseTy *checkVar(A_var *var);
+    BaseTy *checkVar(A_var *var);
 
     void checkDec(A_dec *dec);
 

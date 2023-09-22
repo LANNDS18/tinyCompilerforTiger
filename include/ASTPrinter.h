@@ -3,21 +3,22 @@
 #include "abstract.h"
 
 class ASTPrinter {
+
 public:
     static void printExp(A_exp *exp, int front_space);
 
 private:
-    static void space(int n);
+    static void printSpace(int n);
 
     static void printExpList(A_expList *expList, int front_space);
 
     static void printVar(A_var *var, int front_space);
 
-    static void print_dec(A_dec *dec, int front_space);
+    static void printDec(A_dec *dec, int front_space);
 
-    static void print_decList(A_decList *decList, int front_space);
+    static void printDecList(A_decList *decList, int front_space);
 
-    static void print_ty(A_ty *ty, int front_space);
+    static void printType(A_type *ty, int front_space);
 
     static void printField(A_field *ty, int front_space);
 

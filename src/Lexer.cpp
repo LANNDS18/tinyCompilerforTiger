@@ -1,8 +1,8 @@
-#include "../include/lexer.h"
+#include "../include/Lexer.h"
 #include <iostream>
 
 namespace FRONTEND {
-    lexer::lexer(const std::string &src_file) {
+    Lexer::Lexer(const std::string &src_file) {
         src.open(src_file, std::ios::in);
         if (!src.is_open()) {
             std::cerr << "Fail to open file " << src_file << std::endl;
@@ -10,11 +10,11 @@ namespace FRONTEND {
         }
     }
 
-    lexer::~lexer() {
+    Lexer::~Lexer() {
         src.close();
     }
 
-    char lexer::skip_whitespace() {
+    char Lexer::skip_whitespace() {
         char ch = get_next_char();
         while (ch == ' ' || ch == '\r' || ch == '\n' || ch == '\t') {
             if (ch == '\n') line_cnt++;
@@ -23,7 +23,7 @@ namespace FRONTEND {
         return ch;
     }
 
-    void lexer::handle_single_line_comment() {
+    void Lexer::handle_single_line_comment() {
         char ch;
         do {
             ch = get_next_char();
@@ -31,12 +31,12 @@ namespace FRONTEND {
         } while (ch != '\n' && ch != EOF);
     }
 
-    void lexer::handle_multi_line_comment() {
+    void Lexer::handle_multi_line_comment() {
         char last, cur;
         last = get_next_char();
         if (last == '\n') line_cnt++;
         if (last == EOF) {
-            std::cerr << "in line " << line_cnt << ": lexer: incomplete comment, expected */" << std::endl;
+            std::cerr << "in line " << line_cnt << ": Lexer: incomplete comment, expected */" << std::endl;
             exit(1);
         }
         do {
@@ -44,13 +44,13 @@ namespace FRONTEND {
             last = get_next_char();
             if (last == '\n') line_cnt++;
             if (last == EOF) {
-                std::cerr << "in line " << line_cnt << ": lexer: incomplete comment, expected */" << std::endl;
+                std::cerr << "in line " << line_cnt << ": Lexer: incomplete comment, expected */" << std::endl;
                 exit(1);
             }
         } while (!(cur == '*' && last == '/'));
     }
 
-    void lexer::escape_comment() {
+    void Lexer::escape_comment() {
         while (true) { // Keep looping until there are no more comments to escape
             char ch = get_next_char();
             if (ch == '/') {
@@ -71,7 +71,7 @@ namespace FRONTEND {
         }
     }
 
-    std::string lexer::get_num(char ch) {
+    std::string Lexer::get_num(char ch) {
         std::string ret;
         ret += ch;
         while (true) {
@@ -92,13 +92,13 @@ namespace FRONTEND {
             } else {
                 ret += ch;
                 std::cerr << "in line " << line_cnt << ":" << std::endl;
-                std::cerr << "lexer: invalid num " << ret << "..." << std::endl;
+                std::cerr << "Lexer: invalid num " << ret << "..." << std::endl;
                 exit(1);
             }
         }
     }
 
-    std::string lexer::get_identifier(char ch) {
+    std::string Lexer::get_identifier(char ch) {
         std::string ret;
         ret += ch;
         while (true) {
@@ -121,13 +121,13 @@ namespace FRONTEND {
                 ret += ch;
             } else {
                 std::cerr << "in line " << line_cnt << ":" << std::endl;
-                std::cerr << "lexer: char " << ch << " are not expected to occur in identifier." << std::endl;
+                std::cerr << "Lexer: char " << ch << " are not expected to occur in identifier." << std::endl;
                 exit(1);
             }
         }
     }
 
-    std::string lexer::get_operator(char ch) {
+    std::string Lexer::get_operator(char ch) {
         // only operator start with [:<>] may contain more than one chars.
         if (ch != ':' && ch != '<' && ch != '>') {
             return {ch};
@@ -142,7 +142,7 @@ namespace FRONTEND {
         return {ch};
     }
 
-    std::string lexer::get_string() {
+    std::string Lexer::get_string() {
         char last = '"', ch;
         std::string ret;
         ret += '"';
@@ -150,7 +150,7 @@ namespace FRONTEND {
             ch = get_next_char();
             if (ch == EOF) {
                 std::cerr << "in line " << line_cnt << ":" << std::endl;
-                std::cerr << "lexer: fail to get complete string." << std::endl;
+                std::cerr << "Lexer: fail to get complete string." << std::endl;
                 exit(1);
             }
             if (ch != '"') {
@@ -165,7 +165,7 @@ namespace FRONTEND {
     }
 
 
-    std::string lexer::next_word() {
+    std::string Lexer::next_word() {
         char ch = skip_whitespace();
         if (ch == EOF) return {};
 
@@ -173,7 +173,7 @@ namespace FRONTEND {
             escape_comment();
             ch = get_next_char();
         }
-        // escape space after escape comment
+        // escape printSpace after escape comment
         while (ch == ' ' || ch == '\r' || ch == '\n' || ch == '\t') {
             if (ch == '\n') line_cnt++;
             ch = get_next_char();
@@ -195,10 +195,10 @@ namespace FRONTEND {
     }
 
 
-    token lexer::next() {
+    Token Lexer::next() {
         std::string next_ = next_word();
-        if (convert.count(next_))
-            return {convert[next_], line_cnt};
+        if (tokenizerMap.count(next_))
+            return {tokenizerMap[next_], line_cnt};
         if (next_.length() == 0)
             return {EOF, line_cnt};
         if ('0' <= next_[0] && next_[0] <= '9')

@@ -11,49 +11,49 @@
 
 enum class TIG_DTYPE {
     RECORD,
-    NIL_TY,
+    NIL,
     INT,
     STRING,
-    ARRAY_TY,
+    ARRAY,
     VOID
 };
 
-struct baseTy {
+struct BaseTy {
     TIG_DTYPE ty;
     S_symbol name; //S_symbol = std::string
 
-    baseTy(TIG_DTYPE t, S_symbol name_) : ty(t), name(std::move(name_)) {};
+    BaseTy(TIG_DTYPE t, S_symbol name_) : ty(t), name(std::move(name_)) {};
 
-    virtual ~baseTy() = default;
+    virtual ~BaseTy() = default;
 };
 
-struct nilTy : public baseTy {
-    nilTy() : baseTy(TIG_DTYPE::NIL_TY, "nil") {};
+struct NilTy : public BaseTy {
+    NilTy() : BaseTy(TIG_DTYPE::NIL, "nil") {};
 };
 
-struct intTy : public baseTy {
-    intTy() : baseTy(TIG_DTYPE::INT, "int") {};
+struct IntTy : public BaseTy {
+    IntTy() : BaseTy(TIG_DTYPE::INT, "int") {};
 };
 
-struct stringTy : public baseTy {
-    stringTy() : baseTy(TIG_DTYPE::STRING, "string") {};
+struct StringTy : public BaseTy {
+    StringTy() : BaseTy(TIG_DTYPE::STRING, "string") {};
 };
 
-struct voidTy : public baseTy {
-    voidTy() : baseTy(TIG_DTYPE::VOID, "void") {};
+struct VoidTy : public BaseTy {
+    VoidTy() : BaseTy(TIG_DTYPE::VOID, "void") {};
 };
 
-struct recordTy : public baseTy {
-    std::unordered_map<S_symbol, baseTy *> fields;
+struct RecordTy : public BaseTy {
+    std::unordered_map<S_symbol, BaseTy *> fields;
 
-    recordTy(decltype(fields) fs, S_symbol name_) : baseTy(TIG_DTYPE::RECORD, std::move(name_)),
+    RecordTy(decltype(fields) fs, S_symbol name_) : BaseTy(TIG_DTYPE::RECORD, std::move(name_)),
                                                     fields(std::move(fs)) {};
 };
 
-struct arrayTy : public baseTy {
+struct ArrayTy : public BaseTy {
     S_symbol element_type;
 
-    arrayTy(S_symbol t, S_symbol name_) : baseTy(TIG_DTYPE::ARRAY_TY, std::move(name_)), element_type(std::move(t)) {};
+    ArrayTy(S_symbol t, S_symbol name_) : BaseTy(TIG_DTYPE::ARRAY, std::move(name_)), element_type(std::move(t)) {};
 };
 
 class SymbolTable {
@@ -65,9 +65,9 @@ class SymbolTable {
         S_symbol name;
     };
 private:
-    std::unordered_map<S_symbol, std::vector<baseTy *>> typeEnv;
-    std::unordered_map<S_symbol, std::vector<baseTy *>> varEnv;
-    std::unordered_map<S_symbol, std::vector<std::list<baseTy *>>> funcEnv;
+    std::unordered_map<S_symbol, std::vector<BaseTy *>> typeEnv;
+    std::unordered_map<S_symbol, std::vector<BaseTy *>> varEnv;
+    std::unordered_map<S_symbol, std::vector<std::list<BaseTy *>>> funcEnv;
     std::vector<StackOp> scopeStack;
 public:
     SymbolTable();
@@ -76,17 +76,17 @@ public:
 
     void endScope();
 
-    void decType(const S_symbol &sym, baseTy *ty);
+    void decType(const S_symbol &sym, BaseTy *ty);
 
-    void decVar(const S_symbol &sym, baseTy *ty);
+    void decVar(const S_symbol &sym, BaseTy *ty);
 
-    void decFunc(const S_symbol &sym, std::list<baseTy *> &args, baseTy *retTy);
+    void decFunc(const S_symbol &sym, std::list<BaseTy *> &args, BaseTy *retTy);
 
-    baseTy *lookTy(const S_symbol &ty);
+    BaseTy *lookTy(const S_symbol &ty);
 
     bool ExistTy(const S_symbol &ty);
 
-    baseTy *lookVar(const S_symbol &name);
+    BaseTy *lookVar(const S_symbol &name);
 
-    std::pair<baseTy *, std::list<baseTy *>> lookFunc(const S_symbol &name);
+    std::pair<BaseTy *, std::list<BaseTy *>> lookFunc(const S_symbol &name);
 };

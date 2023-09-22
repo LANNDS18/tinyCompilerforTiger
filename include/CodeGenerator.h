@@ -54,7 +54,7 @@ using Type = llvm::Type;
 using Function = llvm::Function;
 using BasicBlock = llvm::BasicBlock;
 
-class codeGenerator {
+class CodeGenerator {
 private:
     llvm::LLVMContext context;
     llvm::IRBuilder<> builder;
@@ -63,7 +63,7 @@ private:
 
     tbl<Value> venv;
     tbl<Type> tenv;
-    tbl<A_ty> tdecs;
+    tbl<A_type> tdecs;
     tbl<A_VarDec> vdecs;
     tbl<Function> fenv;
 
@@ -124,7 +124,7 @@ private:
 
     Type *getFieldType(const std::string &name, A_RecordTy *ty);
 
-    A_ty *getFieldTypeDec(const std::string &name, A_RecordTy *ty);
+    A_type *getFieldTypeDec(const std::string &name, A_RecordTy *ty);
 
     static Value *convertTypedNil(Type *type);
 
@@ -132,14 +132,14 @@ private:
 
     Function *createIntrinsicFunction(const std::string &name, std::vector<Type *> const &arg_tys, Type *ret_ty);
 
-    std::pair<Value *, A_ty *> genLeftValue(A_var *vare);
+    std::pair<Value *, A_type *> genLeftValue(A_var *vare);
 
     Type *NilTy = llvm::PointerType::getUnqual(Type::getVoidTy(context));
 
     std::vector<Value *> genIndice(const std::vector<int> &ids);
 
 public:
-    codeGenerator() : builder(context), module(new llvm::Module("The Module", context)) {
+    CodeGenerator() : builder(context), module(new llvm::Module("The Module", context)) {
         initFenv();
         tenv.put("int", Type::getInt64Ty(context));
         tenv.put("string", llvm::Type::getInt8PtrTy(context));

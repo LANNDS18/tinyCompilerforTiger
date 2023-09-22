@@ -1,20 +1,20 @@
 #pragma once
 
 #include <queue>
-#include "lexer.h"
+#include "Lexer.h"
 #include "abstract.h"
 
 namespace FRONTEND {
-    class parser {
+    class Parser {
     private:
-        lexer lex;
-        std::queue<token> q;
+        Lexer lex;
+        std::queue<Token> q;
 
-        token checkNextToken(int token_ty);
+        Token checkNextToken(int token_ty);
 
-        token popToken();
+        Token popToken();
 
-        void pushTokenBack(const token& t) { q.push(t); };
+        void pushTokenBack(const Token& t) { q.push(t); };
 
         A_dec *declaration();
 
@@ -60,16 +60,16 @@ namespace FRONTEND {
 
         A_field *field();
 
-        A_ty *ty();
+        A_type *ty();
 
         A_decList *declarationList();
 
         A_exp *expList();
 
     public:
-        parser() = delete;
+        Parser() = delete;
 
-        explicit parser(const std::string& src_file) : lex(src_file) {};
+        explicit Parser(const std::string& src_file) : lex(src_file) {};
 
         A_exp *parse();
     };

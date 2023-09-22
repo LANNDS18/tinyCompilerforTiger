@@ -1,10 +1,10 @@
 #include "../include/SymbolTable.h"
 
 SymbolTable::SymbolTable() {
-    auto int_ty = new intTy();
-    auto string_ty = new stringTy();
-    auto nil_ty = new nilTy();
-    auto void_ty = new voidTy();
+    auto int_ty = new IntTy();
+    auto string_ty = new StringTy();
+    auto nil_ty = new NilTy();
+    auto void_ty = new VoidTy();
     typeEnv["int"].push_back(int_ty);
     typeEnv["string"].push_back(string_ty);
     typeEnv["nil"].push_back(nil_ty);
@@ -64,39 +64,39 @@ void SymbolTable::endScope() {
     scopeStack.pop_back();
 }
 
-void SymbolTable::decType(const S_symbol& sym, baseTy* ty) {
+void SymbolTable::decType(const S_symbol& sym, BaseTy* ty) {
     typeEnv[sym].push_back(ty);
     scopeStack.push_back({operation::TYPE_DEC, sym});
 }
 
-void SymbolTable::decVar(const S_symbol& sym, baseTy* ty) {
+void SymbolTable::decVar(const S_symbol& sym, BaseTy* ty) {
     varEnv[sym].push_back(ty);
     scopeStack.push_back({operation::VAR_DEC, sym});
 }
 
-void SymbolTable::decFunc(const S_symbol& sym, std::list<baseTy*> &args, baseTy* retTy) {
+void SymbolTable::decFunc(const S_symbol& sym, std::list<BaseTy*> &args, BaseTy* retTy) {
     auto args_ = args;
     args_.push_front(retTy);
     funcEnv[sym].push_back(std::move(args_));
     scopeStack.push_back({operation::FUN_DEC, sym});
 }
 
-baseTy* SymbolTable::lookTy(const S_symbol& ty) {
+BaseTy* SymbolTable::lookTy(const S_symbol& ty) {
     if(typeEnv.count(ty))
         return typeEnv[ty].back();
     return nullptr;
 }
 
-baseTy* SymbolTable::lookVar(const S_symbol& name) {
+BaseTy* SymbolTable::lookVar(const S_symbol& name) {
     if(varEnv.count(name))
         return varEnv[name].back();
     return nullptr;
 }
 
-std::pair<baseTy*, std::list<baseTy*>> SymbolTable::lookFunc(const S_symbol& name) {
+std::pair<BaseTy*, std::list<BaseTy*>> SymbolTable::lookFunc(const S_symbol& name) {
     if(funcEnv.count(name)) {
         auto list = funcEnv[name].back();
-        baseTy *retType = list.front();
+        BaseTy *retType = list.front();
         list.pop_front();
         return {retType, list};
     }
