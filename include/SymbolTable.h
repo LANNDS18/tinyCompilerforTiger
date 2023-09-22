@@ -20,7 +20,7 @@ enum class TIG_DTYPE {
 
 struct baseTy {
     TIG_DTYPE ty;
-    S_symbol name;
+    S_symbol name; //S_symbol = std::string
 
     baseTy(TIG_DTYPE t, S_symbol name_) : ty(t), name(std::move(name_)) {};
 
@@ -56,23 +56,21 @@ struct arrayTy : public baseTy {
     arrayTy(S_symbol t, S_symbol name_) : baseTy(TIG_DTYPE::ARRAY_TY, std::move(name_)), element_type(std::move(t)) {};
 };
 
-class symbolTable {
+class SymbolTable {
     enum class operation {
         BEGIN, VAR_DEC, TYPE_DEC, FUN_DEC
     };
-    struct stkop {
+    struct StackOp {
         operation op;
         S_symbol name;
     };
 private:
-    // here we use vector as stack
-    std::unordered_map<S_symbol, std::vector<baseTy *>> tenv;
-    std::unordered_map<S_symbol, std::vector<baseTy *>> venv;
-    // first element in list is the type of return value
-    std::unordered_map<S_symbol, std::vector<std::list<baseTy *>>> fenv;
-    std::vector<stkop> stk;
+    std::unordered_map<S_symbol, std::vector<baseTy *>> typeEnv;
+    std::unordered_map<S_symbol, std::vector<baseTy *>> varEnv;
+    std::unordered_map<S_symbol, std::vector<std::list<baseTy *>>> funcEnv;
+    std::vector<StackOp> scopeStack;
 public:
-    symbolTable();
+    SymbolTable();
 
     void beginScope();
 

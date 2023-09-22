@@ -113,7 +113,7 @@ Value *codeGenerator::genOpExp(A_OpExp *exp) {
     auto rhs = genExp(exp->right);
     if (!lhs || !rhs)
         return nullptr;
-    switch (exp->oper) {
+    switch (exp->aOperator) {
         case A_operator::A_plusOp:
             return builder.CreateAdd(lhs, rhs);
         case A_operator::A_minusOp:
@@ -528,13 +528,13 @@ void codeGenerator::genFuncDec(A_FunctionDec *dec) {
 
 void codeGenerator::genDec(A_dec *dec) {
     switch (dec->ty) {
-        case A_dec::type::VARD:
+        case A_dec::type::VARDEC:
             genVarDec(dynamic_cast<A_VarDec *>(dec));
             break;
-        case A_dec::type::FUNCDS:
+        case A_dec::type::FUNCDEC:
             genFuncDec(dynamic_cast<A_FunctionDec *>(dec));
             break;
-        case A_dec::type::TYDS:
+        case A_dec::type::TYDEC:
             genTypeDec(dynamic_cast<A_TypeDec *>(dec));
             break;
     }

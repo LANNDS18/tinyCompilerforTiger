@@ -59,15 +59,15 @@ namespace FRONTEND {
                 token next = popToken();
                 if (next.type == EQ) {
                     auto e = parse_expression();
-                    auto func = new A_funcdec(t.line, func_name.val, list, "", e);
-                    auto _list = new A_funcdecList(func, nullptr);
+                    auto func = new A_funcDec(t.line, func_name.val, list, "", e);
+                    auto _list = new A_funcDecList(func, nullptr);
                     return new A_FunctionDec(func_name.line, _list);
                 } else if (next.type == COLON) {
                     auto id = checkNextToken(IDENTIFIER);
                     checkNextToken(EQ);
                     auto e = parse_expression();
-                    auto func = new A_funcdec(t.line, func_name.val, list, id.val, e);
-                    auto _list = new A_funcdecList(func, nullptr);
+                    auto func = new A_funcDec(t.line, func_name.val, list, id.val, e);
+                    auto _list = new A_funcDecList(func, nullptr);
                     return new A_FunctionDec(func_name.line, _list);
                 } else {
                     std::cerr << "in line " << next.line << ":" << std::endl;
@@ -498,14 +498,14 @@ namespace FRONTEND {
             if (dec == nullptr)
                 break;
             if (!vec.empty()) {
-                if (vec.back()->ty == A_dec::type::FUNCDS && dec->ty == A_dec::type::FUNCDS) {
+                if (vec.back()->ty == A_dec::type::FUNCDEC && dec->ty == A_dec::type::FUNCDEC) {
                     auto list = dynamic_cast<A_FunctionDec *>(vec.back())->function;
                     while (list->tail != nullptr)
                         list = list->tail;
                     list->tail = dynamic_cast<A_FunctionDec *>(dec)->function;
                     continue;
                 }
-                if (vec.back()->ty == A_dec::type::TYDS && dec->ty == A_dec::type::TYDS) {
+                if (vec.back()->ty == A_dec::type::TYDEC && dec->ty == A_dec::type::TYDEC) {
                     auto list = dynamic_cast<A_TypeDec *>(vec.back())->type;
                     while (list->tail != nullptr)
                         list = list->tail;

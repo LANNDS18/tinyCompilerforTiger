@@ -27,9 +27,9 @@ private:
 
     static void printNameTypeList(A_TyDeclareNameList *tyList, int front_space);
 
-    static void printFuncDec(A_funcdec *func, int front_space);
+    static void printFuncDec(A_funcDec *func, int front_space);
 
-    static void printFunctionDecList(A_funcdecList *funcList, int front_space);
+    static void printFunctionDecList(A_funcDecList *funcList, int front_space);
 
     static void printExpField(A_expField *expField, int front_space);
 

@@ -32,8 +32,8 @@ struct A_ty;
 struct A_field;
 struct A_fieldList;
 struct A_expList;
-struct A_funcdec;
-struct A_funcdecList;
+struct A_funcDec;
+struct A_funcDecList;
 struct A_decList;
 struct A_TyDeclareName;
 struct A_TyDeclareNameList;
@@ -150,12 +150,12 @@ public:
 
 struct A_OpExp : public A_exp {
 public:
-    A_operator oper;
+    A_operator aOperator;
     A_exp *left;
     A_exp *right;
 
-    A_OpExp(A_pos p, A_operator oper_, A_exp *left_, A_exp *right_) :
-            A_exp(p, type::OpExp), oper(oper_), left(left_), right(right_) {};
+    A_OpExp(A_pos p, A_operator anOperator, A_exp *left_, A_exp *right_) :
+            A_exp(p, type::OpExp), aOperator(anOperator), left(left_), right(right_) {};
 };
 
 
@@ -261,7 +261,9 @@ public:
 struct A_dec {
 public:
     enum class type {
-        FUNCDS, TYDS, VARD
+        FUNCDEC,
+        TYDEC,
+        VARDEC
     };
     A_pos pos;
     type ty;
@@ -275,10 +277,10 @@ public:
 // Represents a function declaration.
 struct A_FunctionDec : A_dec {
 public:
-    A_funcdecList *function;
+    A_funcDecList *function;
 
-    A_FunctionDec(A_pos p, A_funcdecList *function_) :
-            A_dec(p, type::FUNCDS), function(function_) {};
+    A_FunctionDec(A_pos p, A_funcDecList *function_) :
+            A_dec(p, type::FUNCDEC), function(function_) {};
 };
 
 
@@ -290,7 +292,7 @@ public:
     A_exp *init;
 
     A_VarDec(A_pos p, S_symbol var_, S_symbol type_, A_exp *init_) :
-            A_dec(p, type::VARD), var(std::move(var_)), type(std::move(type_)), init(init_) {};
+            A_dec(p, type::VARDEC), var(std::move(var_)), type(std::move(type_)), init(init_) {};
 };
 
 
@@ -300,7 +302,7 @@ public:
     A_TyDeclareNameList *type;
 
     A_TypeDec(A_pos p, A_TyDeclareNameList *type_) :
-            A_dec(p, type::TYDS), type(type_) {};
+            A_dec(p, type::TYDEC), type(type_) {};
 };
 
 
@@ -375,7 +377,7 @@ public:
 };
 
 
-struct A_funcdec {
+struct A_funcDec {
 public:
     A_pos pos;
     S_symbol name;
@@ -383,17 +385,17 @@ public:
     S_symbol result;
     A_exp *body;
 
-    A_funcdec(A_pos p, S_symbol name_, A_fieldList *params_, S_symbol result_, A_exp *body_) :
+    A_funcDec(A_pos p, S_symbol name_, A_fieldList *params_, S_symbol result_, A_exp *body_) :
             pos(p), name(std::move(name_)), params(params_), result(std::move(result_)), body(body_) {};
 };
 
 
-struct A_funcdecList {
+struct A_funcDecList {
 public:
-    A_funcdec *head;
-    A_funcdecList *tail;
+    A_funcDec *head;
+    A_funcDecList *tail;
 
-    A_funcdecList(A_funcdec *head_, A_funcdecList *tail_) :
+    A_funcDecList(A_funcDec *head_, A_funcDecList *tail_) :
             head(head_), tail(tail_) {};
 };
 

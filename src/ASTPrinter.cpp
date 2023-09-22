@@ -83,7 +83,7 @@ void ASTPrinter::printExp(A_exp *exp, int front_space) {
         case A_exp::type::OpExp: {
             auto e = dynamic_cast<A_OpExp *>(exp);
             cout << "OpExp(Operator(";
-            switch (e->oper) {
+            switch (e->aOperator) {
                 case A_operator::A_divideOp:
                     cout << "DIV";
                     break;
@@ -205,21 +205,21 @@ void ASTPrinter::printVar(A_var *var, int front_space) {
 void ASTPrinter::print_dec(A_dec *dec, int front_space) {
     space(front_space);
     switch (dec->ty) {
-        case A_dec::type::VARD: {
+        case A_dec::type::VARDEC: {
             auto d = dynamic_cast<A_VarDec *>(dec);
             cout << "VarDec(Symbol(" << d->var << "),Symbol(" << d->type << ")," << endl;
             printExp(d->init, front_space + 4);
             cout << ")";
         }
             break;
-        case A_dec::type::FUNCDS: {
+        case A_dec::type::FUNCDEC: {
             cout << "FunctionDec(" << endl;
             auto d = dynamic_cast<A_FunctionDec *>(dec);
             printFunctionDecList(d->function, front_space + 4);
             cout << ")";
         }
             break;
-        case A_dec::type::TYDS: {
+        case A_dec::type::TYDEC: {
             auto d = dynamic_cast<A_TypeDec *>(dec);
             cout << "TypeDec(" << endl;
             printNameTypeList(d->type, front_space + 4);
@@ -300,7 +300,7 @@ void ASTPrinter::printNameTypeList(A_TyDeclareNameList *tyList, int front_space)
     cout << ")";
 }
 
-void ASTPrinter::printFuncDec(A_funcdec *func, int front_space) {
+void ASTPrinter::printFuncDec(A_funcDec *func, int front_space) {
     space(front_space);
     cout << "FunctionDec(Symbol(" << func->name << "),Symbol(" << func->result << ")," << endl;
     printFieldList(func->params, front_space + 4);
@@ -309,7 +309,7 @@ void ASTPrinter::printFuncDec(A_funcdec *func, int front_space) {
     cout << ")";
 }
 
-void ASTPrinter::printFunctionDecList(A_funcdecList *funcList, int front_space) {
+void ASTPrinter::printFunctionDecList(A_funcDecList *funcList, int front_space) {
     space(front_space);
     cout << "FunctionDecList(" << endl;
     while (funcList != nullptr && funcList->head != nullptr) {

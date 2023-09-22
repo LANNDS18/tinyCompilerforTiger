@@ -1,11 +1,11 @@
 #pragma once
 
 #include "abstract.h"
-#include "symbolTab.h"
+#include "SymbolTable.h"
 
-class typeCheck {
+class TypeChecker {
 private:
-    symbolTable tbl;
+    SymbolTable symbolTable;
     A_exp *ast;
 
     baseTy *checkExp(A_exp *exp);
@@ -17,7 +17,7 @@ private:
     static void error(int line, const std::string &errmsg);
 
 public:
-    explicit typeCheck(A_exp *ast_) : ast(ast_) {};
+    explicit TypeChecker(A_exp *ast_) : ast(ast_) {};
 
     void check();
 };
