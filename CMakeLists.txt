@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 SET(CMAKE_BUILD_TYPE "Debug") 
 SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -g2 -ggdb")
+# SET(LLVM_DIR "/opt/homebrew/Cellar/llvm@16/16.0.6/lib/cmake/llvm")
 SET(LLVM_DIR "/opt/homebrew/Cellar/llvm@12/12.0.1_1/lib/cmake/llvm")
 
 find_package(LLVM REQUIRED CONFIG)

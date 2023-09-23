@@ -48,8 +48,6 @@ public:
     void begin() { q.emplace_back(""); };
 };
 
-
-using Type = llvm::Type;
 using Function = llvm::Function;
 using BasicBlock = llvm::BasicBlock;
 
@@ -61,7 +59,7 @@ private:
     std::vector<BasicBlock *> loop_stack;
 
     tbl<llvm::Value> venv;
-    tbl<Type> tenv;
+    tbl<llvm::Type> tenv;
     tbl<A_type> tdecs;
     tbl<A_VarDec> vdecs;
     tbl<Function> fenv;
@@ -106,7 +104,6 @@ private:
 
     void genDec(A_dec *dec);
 
-    // aux funcs
     void beginScope();
 
     void endScope();
@@ -115,34 +112,34 @@ private:
 
     llvm::Value *getStrConstant(std::string &str);
 
-    void createNamedValue(std::string name, llvm::Value *value, Type *type);
+    void createNamedValue(std::string name, llvm::Value *value, llvm::Type *type);
 
     llvm::Value *getNamedValue(std::string name);
 
     static int getIdxInRecordTy(const std::string &name, A_RecordTy *ty);
 
-    Type *getFieldType(const std::string &name, A_RecordTy *ty);
+    llvm::Type *getFieldType(const std::string &name, A_RecordTy *ty);
 
     A_type *getFieldTypeDec(const std::string &name, A_RecordTy *ty);
 
-    static llvm::Value *convertTypedNil(Type *type);
+    static llvm::Value *convertTypedNil(llvm::Type *type);
 
     llvm::Value *convertRightValue(llvm::Value *leftValue);
 
-    Function *createIntrinsicFunction(const std::string &name, std::vector<Type *> const &arg_tys, Type *ret_ty);
+    Function *createIntrinsicFunction(const std::string &name, std::vector<llvm::Type *> const &arg_tys, llvm::Type *ret_ty);
 
     std::pair<llvm::Value *, A_type *> genLeftValue(A_var *vare);
 
-    Type *NilTy = llvm::PointerType::getUnqual(Type::getVoidTy(context));
+    llvm::Type *NilTy = llvm::PointerType::getUnqual(llvm::Type::getVoidTy(context));
 
     std::vector<llvm::Value *> genIndice(const std::vector<int> &ids);
 
 public:
     CodeGenerator() : builder(context), module(new llvm::Module("The Module", context)) {
         initFenv();
-        tenv.put("int", Type::getInt64Ty(context));
+        tenv.put("int", llvm::Type::getInt64Ty(context));
         tenv.put("string", llvm::Type::getInt8PtrTy(context));
-        tenv.put("void", Type::getVoidTy(context));
+        tenv.put("void", llvm::Type::getVoidTy(context));
     };
 
     void generate(A_exp *syntax_tree, const std::string &filename, int task);

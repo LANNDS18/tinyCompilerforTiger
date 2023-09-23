@@ -63,7 +63,8 @@ std::pair<llvm::Value *, A_type *> CodeGenerator::genLeftValue(A_var *var) {
             assert(parentTypeDec && parentTypeDec->ty == A_type::type::RecordTy);
             int idx = getIdxInRecordTy(v->sym, parentTypeDec);
             A_type *fieldTypeDec = getFieldTypeDec(v->sym, parentTypeDec);
-            auto fieldPtr = builder.CreateGEP(parentValue, genIndice({0, idx}));
+            // auto create_type = getFieldType();
+            auto fieldPtr = builder.CreateGEP(parentValue, genIndice({0, idx})); // %todo
             return {fieldPtr, fieldTypeDec};
         }
         case A_var::type::SUBSCRIPT: {
@@ -75,7 +76,8 @@ std::pair<llvm::Value *, A_type *> CodeGenerator::genLeftValue(A_var *var) {
             llvm::Value *offset = genExp(v->exp);
             auto elementTyDec = tdecs.get(parentTypeDec->array);
             assert(elementTyDec || (parentTypeDec->array == "int") || (parentTypeDec->array == "string"));
-            auto elementPtr = builder.CreateGEP(parentValue, builder.CreateTrunc(offset, builder.getInt32Ty()));
+            auto elementPtr = builder.CreateGEP(parentValue,
+                                                builder.CreateTrunc(offset, builder.getInt32Ty())); // %todo
             return {elementPtr, elementTyDec};
         }
     }
@@ -145,7 +147,7 @@ int CodeGenerator::getIdxInRecordTy(const std::string &name, A_RecordTy *ty) {
     return idx;
 }
 
-Type *CodeGenerator::getFieldType(const std::string &name, A_RecordTy *ty) {
+llvm::Type *CodeGenerator::getFieldType(const std::string &name, A_RecordTy *ty) {
     auto list = ty->record;
     for (; list != nullptr && list->head != nullptr; list = list->tail) {
         if (list->head->name == name)
@@ -170,11 +172,10 @@ llvm::Value *CodeGenerator::genRecordExp(A_RecordExp *exp) {
     // auto elementType = llvm::cast<llvm::PointerType>(type)->getElementType();
     // assert(elementType->isStructTy());
     auto structType = type;
-   //  auto structType = llvm::cast<llvm::StructType>(elementType);
+    //  auto structType = llvm::cast<llvm::StructType>(elementType);
     auto size = module->getDataLayout().getTypeAllocSize(structType);
-    llvm::Value *sz = llvm::ConstantInt::get(Type::getInt64Ty(context), llvm::APInt(64, size));
+    llvm::Value *sz = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), llvm::APInt(64, size));
     std::string allocator{"alloc"};
-
     llvm::Value *ptr = builder.CreateCall(fenv.get(allocator), sz);
     ptr = builder.CreateBitCast(ptr, llvm::cast<llvm::PointerType>(type));
     auto list = exp->fields;
@@ -321,7 +322,7 @@ llvm::Value *CodeGenerator::genForExp(A_ForExp *exp) {
     builder.SetInsertPoint(InitBB);
     llvm::Value *low = genExp(exp->lo);
     assert(low != nullptr);
-    createNamedValue(exp->var, low, Type::getInt64Ty(context));
+    createNamedValue(exp->var, low, llvm::Type::getInt64Ty(context));
     vdecs.put(exp->var, new A_VarDec(exp->pos, exp->var, "int", exp->body));
     builder.CreateBr(CondBB);
 
@@ -355,12 +356,12 @@ llvm::Value *CodeGenerator::genArrayExp(A_ArrayExp *exp) {
     auto initValue = genExp(exp->init);
 
     // allocate printSpace for the array
-    auto elementType = llvm::cast<llvm::PointerType>(type)->getElementType();
+    // auto elementType = llvm::cast<llvm::PointerType>(type)->getElementType();
     if (initValue->getType() == NilTy) {
-        initValue = convertTypedNil(elementType);
+        initValue = convertTypedNil(type);
     }
-    auto size = module->getDataLayout().getTypeAllocSize(elementType);
-    llvm::Value *sz = llvm::ConstantInt::get(Type::getInt64Ty(context), llvm::APInt(64, size));
+    auto size = module->getDataLayout().getTypeAllocSize(type);
+    llvm::Value *sz = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), llvm::APInt(64, size));
     std::string allocator{"alloc"};
     llvm::Value *ptr = builder.CreateCall(fenv.get(allocator), builder.CreateMul(arrayLength, sz));
     ptr = builder.CreateBitCast(ptr, type, "array");
@@ -382,7 +383,7 @@ llvm::Value *CodeGenerator::genArrayExp(A_ArrayExp *exp) {
     // "i < len"
     builder.SetInsertPoint(CondBB);
     llvm::Value *CondV = builder.CreateICmpSLT(builder.CreateLoad(index),
-                                         builder.CreateTrunc(arrayLength, builder.getInt32Ty()));
+                                               builder.CreateTrunc(arrayLength, builder.getInt32Ty()));
     builder.CreateCondBr(CondV, ForBodyBB, EndBB);
 
     // "arr[i] = init_val"
@@ -451,7 +452,7 @@ void CodeGenerator::genTypeDec(A_TypeDec *dec) {
         auto cur = l->head;
         if (cur->ty->ty == A_type::type::RecordTy) {
             auto t = dynamic_cast<A_RecordTy *>(cur->ty);
-            std::vector<Type *> fields;
+            std::vector<llvm::Type *> fields;
             for (auto _l = t->record; _l != nullptr; _l = _l->tail) {
                 if (_l->head == nullptr)
                     break;
@@ -475,16 +476,16 @@ void CodeGenerator::genFuncDec(A_FunctionDec *dec) {
     auto l = dec->function;
     for (; l != nullptr && l->head != nullptr; l = l->tail) {
         auto cur = l->head;
-        Type *retTy;
+        llvm::Type *retTy;
         if (cur->result.length() == 0)
             retTy = llvm::Type::getVoidTy(context);
         else
             retTy = tenv.get(cur->result);
         assert(retTy != nullptr);
 
-        std::vector<Type *> paramTys;
+        std::vector<llvm::Type *> paramTys;
         for (auto params = cur->params; params != nullptr && params->head != nullptr; params = params->tail) {
-            Type *t = tenv.get(params->head->type);
+            llvm::Type *t = tenv.get(params->head->type);
             assert(t != nullptr);
             paramTys.push_back(t);
         }
@@ -512,7 +513,7 @@ void CodeGenerator::genFuncDec(A_FunctionDec *dec) {
             params = params->tail;
         }
         llvm::Value *retVal = genExp(cur->body);
-        if (TheFunction->getFunctionType()->getReturnType() != Type::getVoidTy(context))
+        if (TheFunction->getFunctionType()->getReturnType() != llvm::Type::getVoidTy(context))
             builder.CreateRet(retVal);
         else builder.CreateRet(nullptr);
         // if(verifyFunction(*TheFunction, &llvm::outs())) {
@@ -538,13 +539,14 @@ void CodeGenerator::genDec(A_dec *dec) {
 }
 
 Function *
-CodeGenerator::createIntrinsicFunction(const std::string &name, std::vector<Type *> const &arg_tys, Type *ret_ty) {
+CodeGenerator::createIntrinsicFunction(const std::string &name, std::vector<llvm::Type *> const &arg_tys,
+                                       llvm::Type *ret_ty) {
     auto functionType = llvm::FunctionType::get(ret_ty, arg_tys, false);
     auto func = Function::Create(functionType, Function::ExternalLinkage, name, module.get());
     return func;
 }
 
-llvm::Value *CodeGenerator::convertTypedNil(Type *type) {
+llvm::Value *CodeGenerator::convertTypedNil(llvm::Type *type) {
     return llvm::ConstantPointerNull::get(llvm::cast<llvm::PointerType>(type));
 }
 
@@ -564,7 +566,7 @@ void CodeGenerator::endScope() {
     vdecs.pop();
 }
 
-void CodeGenerator::createNamedValue(std::string name, llvm::Value *value, Type *type) {
+void CodeGenerator::createNamedValue(std::string name, llvm::Value *value, llvm::Type *type) {
     if (value->getType() == NilTy) {
         value = convertTypedNil(type);
     }
@@ -610,8 +612,8 @@ void CodeGenerator::generate(A_exp *syntax_tree, const std::string &filename, in
     auto block = BasicBlock::Create(context, "entry", mainFunction);
     builder.SetInsertPoint(block);
     genExp(syntax_tree);
-    builder.CreateRet(llvm::ConstantInt::get(Type::getInt64Ty(context), llvm::APInt(64, 0)));
-    std::cout << "success to build, writing...\n";
+    builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), llvm::APInt(64, 0)));
+    std::cout << "success to build, writing......\n";
     std::error_code EC;
     llvm::raw_fd_ostream OS{filename, EC};
     if (EC) {

@@ -4,8 +4,10 @@ let
   var g := 2
   var c := 0
   type vector = array of int
-  type personlist = array of person type person = { name: string, age: int }
+  type person = { name: string, age: int }
+  type personlist = array of person
   var mat : vector := vector[n] of 0
+  var p1:person := person{name= "a", age= 10}
 
   function printArr(mat : vector, col : int) =
     (
@@ -25,13 +27,18 @@ let
       do mat[i] := n;
       n := 1000;
       g := g+1;
-      puti(n)
+      puti(n);
+      print("\n")
     )
 
 in
+
   printArr(mat, n);
   initArr(mat, n);
   printArr(mat, n);
   c = initArr2(mat, n, g);
+  print("I'm P1 and My name is ");
+  print(p1.name);
+  print("\n");
   puti(c)
 end
