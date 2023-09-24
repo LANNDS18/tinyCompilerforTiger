@@ -63,7 +63,11 @@ std::pair<llvm::Value *, A_type *> CodeGenerator::genLeftValue(A_var *var) {
             assert(parentTypeDec && parentTypeDec->ty == A_type::type::RecordTy);
             int idx = getIdxInRecordTy(v->sym, parentTypeDec);
             A_type *fieldTypeDec = getFieldTypeDec(v->sym, parentTypeDec);
-            auto fieldPtr = builder.CreateGEP(parentValue, genIndice({0, idx})); // %todo
+            auto fieldPtr = builder.CreateGEP(
+                    parentValue->getType()->getPointerElementType(),
+                    parentValue,
+                    genIndice({0, idx})
+            ); // %todo
             return {fieldPtr, fieldTypeDec};
         }
         case A_var::type::SUBSCRIPT: {
@@ -75,8 +79,11 @@ std::pair<llvm::Value *, A_type *> CodeGenerator::genLeftValue(A_var *var) {
             llvm::Value *offset = genExp(v->exp);
             auto elementTyDec = decsType.get(parentTypeDec->array);
             assert(elementTyDec || (parentTypeDec->array == "int") || (parentTypeDec->array == "string"));
-            auto elementPtr = builder.CreateGEP(parentValue,
-                                                builder.CreateTrunc(offset, builder.getInt32Ty())); // %todo
+            auto elementPtr = builder.CreateGEP(
+                    parentValue->getType()->getPointerElementType(),
+                    parentValue,
+                    builder.CreateTrunc(offset, builder.getInt32Ty())
+            ); // %todo
             return {elementPtr, elementTyDec};
         }
     }
@@ -168,7 +175,7 @@ A_type *CodeGenerator::getFieldTypeDec(const std::string &name, A_RecordTy *ty) 
 llvm::Value *CodeGenerator::genRecordExp(A_RecordExp *exp) {
     auto type = envType.get(exp->type);
     assert(type != nullptr && type->isPointerTy());
-    auto elementType = llvm::cast<llvm::PointerType>(type)->getElementType();
+    auto elementType = llvm::cast<llvm::PointerType>(type)->getPointerElementType();
     assert(elementType->isStructTy());
     // auto structType = type;
     auto structType = llvm::cast<llvm::StructType>(elementType);
@@ -188,7 +195,11 @@ llvm::Value *CodeGenerator::genRecordExp(A_RecordExp *exp) {
         if (initVal->getType() == NilTy) {
             initVal = convertTypedNil(fieldTy);
         }
-        auto fieldPtr = builder.CreateGEP(ptr, genIndice({0, idx}));
+        auto fieldPtr = builder.CreateGEP(
+                ptr->getType()->getPointerElementType(),
+                ptr,
+                genIndice({0, idx})
+                );
         builder.CreateStore(initVal, fieldPtr);
     }
     return ptr;
@@ -328,16 +339,19 @@ llvm::Value *CodeGenerator::genForExp(A_ForExp *exp) {
     builder.SetInsertPoint(CondBB);
     llvm::Value *high = genExp(exp->hi);
     assert(high != nullptr);
+    auto namedValue = getNamedValue(exp->var);
     llvm::Value *CondV = builder.CreateICmpSLE(
-            builder.CreateLoad(getNamedValue(exp->var)), high);
+            builder.CreateLoad(namedValue->getType()->getPointerElementType(),namedValue), high);
     builder.CreateCondBr(CondV, ForBodyBB, EndBB);
 
     builder.SetInsertPoint(ForBodyBB);
     genExp(exp->body);
     // "i++"
+
+    namedValue = getNamedValue(exp->var);
     builder.CreateStore(
             builder.CreateAdd(
-                    builder.CreateLoad(getNamedValue(exp->var)),
+                    builder.CreateLoad(namedValue->getType()->getPointerElementType(),namedValue),
                     llvm::ConstantInt::get(context, llvm::APInt(64, 1, true))),
             getNamedValue(exp->var));
     builder.CreateBr(CondBB);
@@ -354,10 +368,9 @@ llvm::Value *CodeGenerator::genArrayExp(A_ArrayExp *exp) {
     auto arrayLength = genExp(exp->size);
     auto initValue = genExp(exp->init);
 
-    // allocate space for the array
-    auto elementType = llvm::cast<llvm::PointerType>(type)->getElementType();   // %todo: fix
-
-    std::cout << "debug "<< elementType->isSingleValueType() << exp->type <<"\n";
+    // allocate space for the array, todo: migrate to opaque type
+    auto elementType = llvm::cast<llvm::PointerType>(type)->getPointerElementType();
+    // std::cout << "debug " << elementType->isSingleValueType() << exp->type << "\n";
 
     if (initValue->getType() == NilTy) {
         initValue = convertTypedNil(elementType);
@@ -386,19 +399,22 @@ llvm::Value *CodeGenerator::genArrayExp(A_ArrayExp *exp) {
 
     // "i < len"
     builder.SetInsertPoint(CondBB);
-    llvm::Value *CondV = builder.CreateICmpSLT(builder.CreateLoad(index),
-                                               builder.CreateTrunc(arrayLength,builder.getInt32Ty()));
+    llvm::Value *CondV = builder.CreateICmpSLT(builder.CreateLoad(index->getType()->getPointerElementType(), index),
+                                               builder.CreateTrunc(arrayLength, builder.getInt32Ty()));
     builder.CreateCondBr(CondV, ForBodyBB, EndBB);
 
     // "arr[i] = init_val"
     builder.SetInsertPoint(ForBodyBB);
-    auto element = builder.CreateGEP(ptr, builder.CreateLoad(index));
+    auto element = builder.CreateGEP(ptr->getType()->getPointerElementType(), ptr, builder.CreateLoad(index->getType()->getPointerElementType(), index));
     builder.CreateStore(initValue, element);
 
     // "index++"
     builder.CreateStore(
             builder.CreateAdd(
-                    builder.CreateLoad(index),
+                    builder.CreateLoad(
+                            index->getType()->getPointerElementType(),
+                            index
+                            ),
                     llvm::ConstantInt::get(context, llvm::APInt(32, 1, true))),
             index);
     builder.CreateBr(CondBB);
@@ -470,7 +486,7 @@ void CodeGenerator::genTypeDec(A_TypeDec *dec) {
             }
             auto structPointerType = llvm::cast<llvm::PointerType>(envType.get(cur->name));
             assert(structPointerType != nullptr && structPointerType->isPointerTy());
-            auto structType = llvm::cast<llvm::StructType>(structPointerType->getElementType());
+            auto structType = llvm::cast<llvm::StructType>(structPointerType->getPointerElementType());
             assert(structType != nullptr && structType->isStructTy());
             structType->setBody(fields);
         }
@@ -585,7 +601,10 @@ llvm::Value *CodeGenerator::getNamedValue(std::string name) {
 }
 
 llvm::Value *CodeGenerator::convertRightValue(llvm::Value *leftValue) {
-    return builder.CreateLoad(leftValue);
+    return builder.CreateLoad(
+            leftValue->getType()->getPointerElementType(),
+            leftValue
+            );
 }
 
 void CodeGenerator::initFenv() {
