@@ -52,8 +52,8 @@ std::pair<llvm::Value *, A_type *> CodeGenerator::genLeftValue(A_var *var) {
     switch (var->ty) {
         case A_var::type::SIMPLE: {
             auto v = dynamic_cast<A_SimpleVar *>(var);
-            auto vdec = vdecs.get(v->sym);
-            return {getNamedValue(v->sym), tdecs.get(vdec->type)};
+            auto vdec = decsValue.get(v->sym);
+            return {getNamedValue(v->sym), decsType.get(vdec->type)};
         }
         case A_var::type::FIELD: {
             auto v = dynamic_cast<A_FieldVar *>(var);
@@ -63,7 +63,6 @@ std::pair<llvm::Value *, A_type *> CodeGenerator::genLeftValue(A_var *var) {
             assert(parentTypeDec && parentTypeDec->ty == A_type::type::RecordTy);
             int idx = getIdxInRecordTy(v->sym, parentTypeDec);
             A_type *fieldTypeDec = getFieldTypeDec(v->sym, parentTypeDec);
-            // auto create_type = getFieldType();
             auto fieldPtr = builder.CreateGEP(parentValue, genIndice({0, idx})); // %todo
             return {fieldPtr, fieldTypeDec};
         }
@@ -74,7 +73,7 @@ std::pair<llvm::Value *, A_type *> CodeGenerator::genLeftValue(A_var *var) {
             auto *parentTypeDec = dynamic_cast<A_ArrayTy *>(parent.second);
             assert(parentTypeDec && parentTypeDec->ty == A_type::type::ArrayTy);
             llvm::Value *offset = genExp(v->exp);
-            auto elementTyDec = tdecs.get(parentTypeDec->array);
+            auto elementTyDec = decsType.get(parentTypeDec->array);
             assert(elementTyDec || (parentTypeDec->array == "int") || (parentTypeDec->array == "string"));
             auto elementPtr = builder.CreateGEP(parentValue,
                                                 builder.CreateTrunc(offset, builder.getInt32Ty())); // %todo
@@ -97,7 +96,7 @@ llvm::Value *CodeGenerator::genStringExp(A_StringExp *exp) {
 }
 
 llvm::Value *CodeGenerator::genCallExp(A_CallExp *exp) {
-    Function *callee = fenv.get(exp->func);
+    llvm::Function *callee = envFunc.get(exp->func);
     assert(callee != nullptr);
     std::vector<llvm::Value *> args;
     for (auto l = exp->args; l != nullptr && l->head != nullptr; l = l->tail) {
@@ -151,7 +150,7 @@ llvm::Type *CodeGenerator::getFieldType(const std::string &name, A_RecordTy *ty)
     auto list = ty->record;
     for (; list != nullptr && list->head != nullptr; list = list->tail) {
         if (list->head->name == name)
-            return tenv.get(list->head->type);
+            return envType.get(list->head->type);
     }
     return nullptr;
 }
@@ -160,26 +159,26 @@ A_type *CodeGenerator::getFieldTypeDec(const std::string &name, A_RecordTy *ty) 
     auto list = ty->record;
     for (; list != nullptr && list->head != nullptr; list = list->tail) {
         if (list->head->name == name)
-            return tdecs.get(list->head->type);
+            return decsType.get(list->head->type);
     }
     return nullptr;
 }
 
 
 llvm::Value *CodeGenerator::genRecordExp(A_RecordExp *exp) {
-    auto type = tenv.get(exp->type);
+    auto type = envType.get(exp->type);
     assert(type != nullptr && type->isPointerTy());
-    // auto elementType = llvm::cast<llvm::PointerType>(type)->getElementType();
-    // assert(elementType->isStructTy());
-    auto structType = type;
-    //  auto structType = llvm::cast<llvm::StructType>(elementType);
+    auto elementType = llvm::cast<llvm::PointerType>(type)->getElementType();
+    assert(elementType->isStructTy());
+    // auto structType = type;
+    auto structType = llvm::cast<llvm::StructType>(elementType);
     auto size = module->getDataLayout().getTypeAllocSize(structType);
     llvm::Value *sz = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), llvm::APInt(64, size));
     std::string allocator{"alloc"};
-    llvm::Value *ptr = builder.CreateCall(fenv.get(allocator), sz);
+    llvm::Value *ptr = builder.CreateCall(envFunc.get(allocator), sz);
     ptr = builder.CreateBitCast(ptr, llvm::cast<llvm::PointerType>(type));
     auto list = exp->fields;
-    auto tydec = dynamic_cast<A_RecordTy *>(tdecs.get(exp->type));
+    auto tydec = dynamic_cast<A_RecordTy *>(decsType.get(exp->type));
     assert(tydec != nullptr);
     for (; list != nullptr && list->head != nullptr; list = list->tail) {
         auto idx = getIdxInRecordTy(list->head->name, tydec);
@@ -223,7 +222,7 @@ llvm::Value *CodeGenerator::genAssignExp(A_AssignExp *exp) {
         }
             // array type
         else if (dst.second->ty == A_type::type::ArrayTy) {
-            val = convertTypedNil(tenv.get(dynamic_cast<A_ArrayTy *>(dst.second)->array));
+            val = convertTypedNil(envType.get(dynamic_cast<A_ArrayTy *>(dst.second)->array));
         }
     }
     builder.CreateStore(val, dst.first);
@@ -235,7 +234,7 @@ llvm::Value *CodeGenerator::genIfExp(A_IfExp *exp) {
     CondV = builder.CreateICmpNE(CondV, builder.getInt64(0));
     assert(CondV != nullptr);
 
-    Function *TheFunction = builder.GetInsertBlock()->getParent();
+    llvm::Function *TheFunction = builder.GetInsertBlock()->getParent();
     BasicBlock *ThenBB = BasicBlock::Create(context, "then", TheFunction);
     BasicBlock *ElseBB = BasicBlock::Create(context, "else");
     BasicBlock *MergeBB = BasicBlock::Create(context, "ifcond");
@@ -250,14 +249,14 @@ llvm::Value *CodeGenerator::genIfExp(A_IfExp *exp) {
 
     // generate else cond
     builder.SetInsertPoint(ElseBB);
-    llvm::Value *ElseV = genExp(exp->elsee);
+    llvm::Value *ElseV = genExp(exp->elseExp);
     builder.CreateBr(MergeBB);
     ElseBB = builder.GetInsertBlock();
 
     TheFunction->getBasicBlockList().push_back(MergeBB);
     builder.SetInsertPoint(MergeBB);
 
-    if (exp->elsee == nullptr)
+    if (exp->elseExp == nullptr)
         return nullptr;
 
     if (ThenV == nullptr || ElseV == nullptr)
@@ -274,7 +273,7 @@ llvm::Value *CodeGenerator::genIfExp(A_IfExp *exp) {
 }
 
 llvm::Value *CodeGenerator::genWhileExp(A_WhileExp *exp) {
-    Function *TheFunction = builder.GetInsertBlock()->getParent();
+    llvm::Function *TheFunction = builder.GetInsertBlock()->getParent();
     BasicBlock *CondBB = BasicBlock::Create(context, "wcond", TheFunction);
     BasicBlock *WhileBodyBB = BasicBlock::Create(context, "wbody", TheFunction);
     BasicBlock *EndBB = BasicBlock::Create(context, "wend", TheFunction);
@@ -299,7 +298,7 @@ llvm::Value *CodeGenerator::genWhileExp(A_WhileExp *exp) {
 
 llvm::Value *CodeGenerator::genLetExp(A_LetExp *exp) {
     beginScope();
-    for (auto l = exp->decs; l != nullptr; l = l->tail) {
+    for (auto l = exp->decList; l != nullptr; l = l->tail) {
         if (l->head != nullptr)
             genDec(l->head);
     }
@@ -310,7 +309,7 @@ llvm::Value *CodeGenerator::genLetExp(A_LetExp *exp) {
 
 llvm::Value *CodeGenerator::genForExp(A_ForExp *exp) {
     beginScope();
-    Function *TheFunction = builder.GetInsertBlock()->getParent();
+    llvm::Function *TheFunction = builder.GetInsertBlock()->getParent();
     BasicBlock *InitBB = BasicBlock::Create(context, "finit", TheFunction);
     BasicBlock *CondBB = BasicBlock::Create(context, "fcond", TheFunction);
     BasicBlock *ForBodyBB = BasicBlock::Create(context, "fbody", TheFunction);
@@ -323,7 +322,7 @@ llvm::Value *CodeGenerator::genForExp(A_ForExp *exp) {
     llvm::Value *low = genExp(exp->lo);
     assert(low != nullptr);
     createNamedValue(exp->var, low, llvm::Type::getInt64Ty(context));
-    vdecs.put(exp->var, new A_VarDec(exp->pos, exp->var, "int", exp->body));
+    decsValue.put(exp->var, new A_VarDec(exp->pos, exp->var, "int", exp->body));
     builder.CreateBr(CondBB);
 
     builder.SetInsertPoint(CondBB);
@@ -350,24 +349,29 @@ llvm::Value *CodeGenerator::genForExp(A_ForExp *exp) {
 }
 
 llvm::Value *CodeGenerator::genArrayExp(A_ArrayExp *exp) {
-    auto type = tenv.get(exp->type);
+    auto type = envType.get(exp->type);
     assert(type != nullptr && type->isPointerTy());
     auto arrayLength = genExp(exp->size);
     auto initValue = genExp(exp->init);
 
-    // allocate printSpace for the array
-    // auto elementType = llvm::cast<llvm::PointerType>(type)->getElementType();
+    // allocate space for the array
+    auto elementType = llvm::cast<llvm::PointerType>(type)->getElementType();   // %todo: fix
+
+    std::cout << "debug "<< elementType->isSingleValueType() << exp->type <<"\n";
+
     if (initValue->getType() == NilTy) {
-        initValue = convertTypedNil(type);
+        initValue = convertTypedNil(elementType);
     }
-    auto size = module->getDataLayout().getTypeAllocSize(type);
+    auto size = module->getDataLayout().getTypeAllocSize(elementType);
+
     llvm::Value *sz = llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), llvm::APInt(64, size));
     std::string allocator{"alloc"};
-    llvm::Value *ptr = builder.CreateCall(fenv.get(allocator), builder.CreateMul(arrayLength, sz));
+    llvm::Value *ptr = builder.CreateCall(envFunc.get(allocator), builder.CreateMul(arrayLength, sz));
+
     ptr = builder.CreateBitCast(ptr, type, "array");
 
     // init the array in a for loop style
-    Function *TheFunction = builder.GetInsertBlock()->getParent();
+    llvm::Function *TheFunction = builder.GetInsertBlock()->getParent();
     BasicBlock *InitBB = BasicBlock::Create(context, "finit", TheFunction);
     BasicBlock *CondBB = BasicBlock::Create(context, "fcond", TheFunction);
     BasicBlock *ForBodyBB = BasicBlock::Create(context, "fbody", TheFunction);
@@ -383,7 +387,7 @@ llvm::Value *CodeGenerator::genArrayExp(A_ArrayExp *exp) {
     // "i < len"
     builder.SetInsertPoint(CondBB);
     llvm::Value *CondV = builder.CreateICmpSLT(builder.CreateLoad(index),
-                                               builder.CreateTrunc(arrayLength, builder.getInt32Ty()));
+                                               builder.CreateTrunc(arrayLength,builder.getInt32Ty()));
     builder.CreateCondBr(CondV, ForBodyBB, EndBB);
 
     // "arr[i] = init_val"
@@ -402,11 +406,12 @@ llvm::Value *CodeGenerator::genArrayExp(A_ArrayExp *exp) {
     return ptr;
 }
 
+
 llvm::Value *CodeGenerator::genBreakExp(A_BreakExp *exp) {
     // ignore invalid break
     if (!loop_stack.empty()) {
         builder.CreateBr(loop_stack.back());
-        Function *TheFunction = builder.GetInsertBlock()->getParent();
+        llvm::Function *TheFunction = builder.GetInsertBlock()->getParent();
         BasicBlock *BreakCondBB = BasicBlock::Create(context, "break", TheFunction);
         builder.SetInsertPoint(BreakCondBB);
     }
@@ -420,8 +425,8 @@ llvm::Value *CodeGenerator::getStrConstant(std::string &str) {
 
 void CodeGenerator::genVarDec(A_VarDec *dec) {
     llvm::Value *initValue = genExp(dec->init);
-    createNamedValue(dec->var, initValue, tenv.get(dec->type));
-    vdecs.put(dec->var, dec);
+    createNamedValue(dec->var, initValue, envType.get(dec->type));
+    decsValue.put(dec->var, dec);
 }
 
 void CodeGenerator::genTypeDec(A_TypeDec *dec) {
@@ -430,8 +435,8 @@ void CodeGenerator::genTypeDec(A_TypeDec *dec) {
     for (; l != nullptr && l->head != nullptr; l = l->tail) {
         auto cur = l->head;
         if (cur->ty->ty == A_type::type::RecordTy) {
-            tenv.put(cur->name, llvm::PointerType::getUnqual(llvm::StructType::create(context, cur->name)));
-            tdecs.put(cur->name, cur->ty);
+            envType.put(cur->name, llvm::PointerType::getUnqual(llvm::StructType::create(context, cur->name)));
+            decsType.put(cur->name, cur->ty);
         }
     }
 
@@ -440,10 +445,10 @@ void CodeGenerator::genTypeDec(A_TypeDec *dec) {
         auto cur = l->head;
         if (cur->ty->ty == A_type::type::ArrayTy) {
             auto t = dynamic_cast<A_ArrayTy *>(cur->ty);
-            auto elementType = tenv.get(t->array);
+            auto elementType = envType.get(t->array);
             auto pointerType = llvm::PointerType::getUnqual(elementType);
-            tenv.put(cur->name, pointerType);
-            tdecs.put(cur->name, cur->ty);
+            envType.put(cur->name, pointerType);
+            decsType.put(cur->name, cur->ty);
         }
     }
 
@@ -461,9 +466,9 @@ void CodeGenerator::genTypeDec(A_TypeDec *dec) {
                 else if (_l->head->type == "string")
                     fields.push_back(llvm::Type::getInt8PtrTy(context));
                 else
-                    fields.push_back(tenv.get(_l->head->type));
+                    fields.push_back(envType.get(_l->head->type));
             }
-            auto structPointerType = llvm::cast<llvm::PointerType>(tenv.get(cur->name));
+            auto structPointerType = llvm::cast<llvm::PointerType>(envType.get(cur->name));
             assert(structPointerType != nullptr && structPointerType->isPointerTy());
             auto structType = llvm::cast<llvm::StructType>(structPointerType->getElementType());
             assert(structType != nullptr && structType->isStructTy());
@@ -480,24 +485,24 @@ void CodeGenerator::genFuncDec(A_FunctionDec *dec) {
         if (cur->result.length() == 0)
             retTy = llvm::Type::getVoidTy(context);
         else
-            retTy = tenv.get(cur->result);
+            retTy = envType.get(cur->result);
         assert(retTy != nullptr);
 
         std::vector<llvm::Type *> paramTys;
         for (auto params = cur->params; params != nullptr && params->head != nullptr; params = params->tail) {
-            llvm::Type *t = tenv.get(params->head->type);
+            llvm::Type *t = envType.get(params->head->type);
             assert(t != nullptr);
             paramTys.push_back(t);
         }
         auto functionType = llvm::FunctionType::get(retTy, paramTys, false);
-        auto func = Function::Create(functionType, Function::InternalLinkage, cur->name, module.get());
-        fenv.put(cur->name, func);
+        auto func = llvm::Function::Create(functionType, llvm::Function::InternalLinkage, cur->name, module.get());
+        envFunc.put(cur->name, func);
     }
 
     for (l = dec->function; l != nullptr && l->head != nullptr; l = l->tail) {
         auto cur = l->head;
         beginScope();
-        Function *TheFunction = fenv.get(cur->name);
+        llvm::Function *TheFunction = envFunc.get(cur->name);
         assert(TheFunction != nullptr);
         BasicBlock *Body = BasicBlock::Create(context, "entry", TheFunction);
         auto originalPoint = builder.GetInsertPoint();
@@ -507,9 +512,9 @@ void CodeGenerator::genFuncDec(A_FunctionDec *dec) {
         auto params = cur->params;
         for (auto &Arg: TheFunction->args()) {
             assert(params && params->head);
-            createNamedValue(params->head->name, &Arg, tenv.get(params->head->type));
-            vdecs.put(params->head->name,
-                      new A_VarDec(params->head->pos, params->head->name, params->head->type, nullptr));
+            createNamedValue(params->head->name, &Arg, envType.get(params->head->type));
+            decsValue.put(params->head->name,
+                          new A_VarDec(params->head->pos, params->head->name, params->head->type, nullptr));
             params = params->tail;
         }
         llvm::Value *retVal = genExp(cur->body);
@@ -538,11 +543,11 @@ void CodeGenerator::genDec(A_dec *dec) {
     }
 }
 
-Function *
+llvm::Function *
 CodeGenerator::createIntrinsicFunction(const std::string &name, std::vector<llvm::Type *> const &arg_tys,
                                        llvm::Type *ret_ty) {
     auto functionType = llvm::FunctionType::get(ret_ty, arg_tys, false);
-    auto func = Function::Create(functionType, Function::ExternalLinkage, name, module.get());
+    auto func = llvm::Function::Create(functionType, llvm::Function::ExternalLinkage, name, module.get());
     return func;
 }
 
@@ -551,19 +556,19 @@ llvm::Value *CodeGenerator::convertTypedNil(llvm::Type *type) {
 }
 
 void CodeGenerator::beginScope() {
-    tenv.begin();
-    venv.begin();
-    fenv.begin();
-    tdecs.begin();
-    vdecs.begin();
+    envType.begin();
+    envValue.begin();
+    envFunc.begin();
+    decsType.begin();
+    decsValue.begin();
 }
 
 void CodeGenerator::endScope() {
-    tenv.pop();
-    venv.pop();
-    fenv.pop();
-    tdecs.pop();
-    vdecs.pop();
+    envType.pop();
+    envValue.pop();
+    envFunc.pop();
+    decsType.pop();
+    decsValue.pop();
 }
 
 void CodeGenerator::createNamedValue(std::string name, llvm::Value *value, llvm::Type *type) {
@@ -572,11 +577,11 @@ void CodeGenerator::createNamedValue(std::string name, llvm::Value *value, llvm:
     }
     llvm::Value *namedValue = builder.CreateAlloca(value->getType());
     builder.CreateStore(value, namedValue);
-    venv.put(std::move(name), namedValue);
+    envValue.put(std::move(name), namedValue);
 }
 
 llvm::Value *CodeGenerator::getNamedValue(std::string name) {
-    return venv.get(name);
+    return envValue.get(name);
 }
 
 llvm::Value *CodeGenerator::convertRightValue(llvm::Value *leftValue) {
@@ -588,20 +593,20 @@ void CodeGenerator::initFenv() {
     llvm::Type *voidType{llvm::Type::getVoidTy(context)};
     llvm::Type *stringType{llvm::Type::getInt8PtrTy(context)};
 
-    fenv.put("print", createIntrinsicFunction("__print__", {stringType}, voidType));
-    fenv.put("puti", createIntrinsicFunction("__puti__", {intType}, voidType));
-    fenv.put("flush", createIntrinsicFunction("__flush__", {}, voidType));
-    fenv.put("getchar", createIntrinsicFunction("__getchar__", {}, stringType));
-    fenv.put("getint", createIntrinsicFunction("__getint__", {}, intType));
-    fenv.put("ord", createIntrinsicFunction("__ord__", {stringType}, intType));
-    fenv.put("size", createIntrinsicFunction("__size__", {stringType}, intType));
-    fenv.put("substring", createIntrinsicFunction("__substring__", {stringType, intType, intType}, stringType));
-    fenv.put("concat", createIntrinsicFunction("__concat__", {stringType, stringType}, stringType));
-    fenv.put("not", createIntrinsicFunction("__not__", {intType}, intType));
-    fenv.put("exit", createIntrinsicFunction("__exit__", {intType}, voidType));
-    fenv.put("alloc", createIntrinsicFunction("alloc", {intType}, stringType));
-    fenv.put("gets", createIntrinsicFunction("__gets__", {}, stringType));
-    fenv.put("chr", createIntrinsicFunction("alloc", {intType}, stringType));
+    envFunc.put("print", createIntrinsicFunction("__print__", {stringType}, voidType));
+    envFunc.put("puti", createIntrinsicFunction("__puti__", {intType}, voidType));
+    envFunc.put("flush", createIntrinsicFunction("__flush__", {}, voidType));
+    envFunc.put("getchar", createIntrinsicFunction("__getchar__", {}, stringType));
+    envFunc.put("getint", createIntrinsicFunction("__getint__", {}, intType));
+    envFunc.put("ord", createIntrinsicFunction("__ord__", {stringType}, intType));
+    envFunc.put("size", createIntrinsicFunction("__size__", {stringType}, intType));
+    envFunc.put("substring", createIntrinsicFunction("__substring__", {stringType, intType, intType}, stringType));
+    envFunc.put("concat", createIntrinsicFunction("__concat__", {stringType, stringType}, stringType));
+    envFunc.put("not", createIntrinsicFunction("__not__", {intType}, intType));
+    envFunc.put("exit", createIntrinsicFunction("__exit__", {intType}, voidType));
+    envFunc.put("alloc", createIntrinsicFunction("alloc", {intType}, stringType));
+    envFunc.put("gets", createIntrinsicFunction("__gets__", {}, stringType));
+    envFunc.put("chr", createIntrinsicFunction("alloc", {intType}, stringType));
 }
 
 void CodeGenerator::generate(A_exp *syntax_tree, const std::string &filename, int task) {

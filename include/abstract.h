@@ -196,10 +196,10 @@ struct A_IfExp : public A_exp {
 public:
     A_exp *test;
     A_exp *then;
-    A_exp *elsee;
+    A_exp *elseExp;
 
-    A_IfExp(A_pos p, A_exp *test_, A_exp *then_, A_exp *elsee_) :
-            A_exp(p, type::IfExp), test(test_), then(then_), elsee(elsee_) {};
+    A_IfExp(A_pos p, A_exp *test_, A_exp *then_, A_exp *else_exp) :
+            A_exp(p, type::IfExp), test(test_), then(then_), elseExp(else_exp) {};
 };
 
 
@@ -221,7 +221,6 @@ public:
 };
 
 
-// For exp
 struct A_ForExp : public A_exp {
 public:
     S_symbol var;   //symbol
@@ -237,11 +236,11 @@ public:
 // Represents a let-in-end expression, a kind of scoped expression.
 struct A_LetExp : public A_exp {
 public:
-    A_decList *decs;
+    A_decList *decList;
     A_exp *body;
 
     A_LetExp(A_pos p, A_decList *decs_, A_exp *body_) :
-            A_exp(p, type::LetExp), decs(decs_), body(body_) {};
+            A_exp(p, type::LetExp), decList(decs_), body(body_) {};
 };
 
 

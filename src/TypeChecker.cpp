@@ -162,7 +162,7 @@ BaseTy *TypeChecker::checkExp(A_exp *exp) {
             if (condition_ty == nullptr || condition_ty->ty != TIG_DTYPE::INT)
                 error(e->pos, "The Doc condition for the if statement must be of type int");
             auto then_ty = checkExp(e->then);
-            auto else_ty = checkExp(e->elsee);
+            auto else_ty = checkExp(e->elseExp);
             if (else_ty == nullptr) return symbolTable.lookTy("void");
             if (then_ty != else_ty && !(then_ty->ty == TIG_DTYPE::NIL && else_ty->ty == TIG_DTYPE::RECORD ||
                                         then_ty->ty == TIG_DTYPE::RECORD && else_ty->ty == TIG_DTYPE::NIL))
@@ -181,7 +181,7 @@ BaseTy *TypeChecker::checkExp(A_exp *exp) {
 
         case expty::LetExp: {
             auto e = dynamic_cast<A_LetExp *>(exp);
-            auto list = e->decs;
+            auto list = e->decList;
             symbolTable.beginScope();
             while (list) {
                 checkDec(list->head);

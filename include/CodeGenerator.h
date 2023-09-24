@@ -1,23 +1,17 @@
 #pragma once
 
-#include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/Constants.h"
-#include "llvm/IR/Function.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/Verifier.h"
-#include "llvm/Bitcode/BitcodeWriter.h"
-
 #include "abstract.h"
+
 #include <memory>
 #include <unordered_map>
 #include <vector>
 #include <iostream>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/Bitcode/BitcodeWriter.h>
+
 
 template<typename T>
-class tbl {
+class table {
 private:
     std::unordered_map<std::string, std::vector<T *>> store;
     std::vector<std::string> q;
@@ -48,7 +42,6 @@ public:
     void begin() { q.emplace_back(""); };
 };
 
-using Function = llvm::Function;
 using BasicBlock = llvm::BasicBlock;
 
 class CodeGenerator {
@@ -58,11 +51,12 @@ private:
     std::unique_ptr<llvm::Module> module;
     std::vector<BasicBlock *> loop_stack;
 
-    tbl<llvm::Value> venv;
-    tbl<llvm::Type> tenv;
-    tbl<A_type> tdecs;
-    tbl<A_VarDec> vdecs;
-    tbl<Function> fenv;
+    table<llvm::Value> envValue;
+    table<llvm::Type> envType;
+    table<llvm::Function> envFunc;
+
+    table<A_type> decsType;
+    table<A_VarDec> decsValue;
 
     llvm::Value *genExp(A_exp *exp);
 
@@ -126,7 +120,8 @@ private:
 
     llvm::Value *convertRightValue(llvm::Value *leftValue);
 
-    Function *createIntrinsicFunction(const std::string &name, std::vector<llvm::Type *> const &arg_tys, llvm::Type *ret_ty);
+    llvm::Function *
+    createIntrinsicFunction(const std::string &name, std::vector<llvm::Type *> const &arg_tys, llvm::Type *ret_ty);
 
     std::pair<llvm::Value *, A_type *> genLeftValue(A_var *vare);
 
@@ -137,9 +132,9 @@ private:
 public:
     CodeGenerator() : builder(context), module(new llvm::Module("The Module", context)) {
         initFenv();
-        tenv.put("int", llvm::Type::getInt64Ty(context));
-        tenv.put("string", llvm::Type::getInt8PtrTy(context));
-        tenv.put("void", llvm::Type::getVoidTy(context));
+        envType.put("int", llvm::Type::getInt64Ty(context));
+        envType.put("string", llvm::Type::getInt8PtrTy(context));
+        envType.put("void", llvm::Type::getVoidTy(context));
     };
 
     void generate(A_exp *syntax_tree, const std::string &filename, int task);

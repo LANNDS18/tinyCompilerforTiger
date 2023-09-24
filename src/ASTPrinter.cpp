@@ -62,7 +62,7 @@ void ASTPrinter::printExp(A_exp *exp, int front_space) {
             cout << "," << endl;
             printExp(e->then, front_space + 4);
             cout << "," << endl;
-            printExp(e->elsee, front_space + 4);
+            printExp(e->elseExp, front_space + 4);
             cout << ")";
         }
             break;
@@ -74,7 +74,7 @@ void ASTPrinter::printExp(A_exp *exp, int front_space) {
         case A_exp::type::LetExp: {
             auto e = dynamic_cast<A_LetExp *>(exp);
             cout << "LetExp(" << endl;
-            printDecList(e->decs, front_space + 4);
+            printDecList(e->decList, front_space + 4);
             cout << "," << endl;
             printExp(e->body, front_space + 4);
             cout << ")";
