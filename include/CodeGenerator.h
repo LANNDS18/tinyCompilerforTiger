@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 #include <iostream>
+
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/Bitcode/BitcodeWriter.h>
 
@@ -89,7 +90,7 @@ private:
 
     llvm::Value *genArrayExp(A_ArrayExp *exp);
 
-    llvm::Value *genBreakExp(A_BreakExp *exp);
+    llvm::Value *genBreakExp();
 
     void genVarDec(A_VarDec *dec);
 

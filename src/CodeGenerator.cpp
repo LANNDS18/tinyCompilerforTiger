@@ -38,7 +38,7 @@ llvm::Value *CodeGenerator::genExp(A_exp *exp) {
         case A_exp::type::ArrayExp:
             return genArrayExp(dynamic_cast<A_ArrayExp *>(exp));
         case A_exp::type::BreakExp:
-            return genBreakExp(dynamic_cast<A_BreakExp *>(exp));
+            return genBreakExp();
     }
     assert(0);
 }
@@ -63,11 +63,13 @@ std::pair<llvm::Value *, A_type *> CodeGenerator::genLeftValue(A_var *var) {
             assert(parentTypeDec && parentTypeDec->ty == A_type::type::RecordTy);
             int idx = getIdxInRecordTy(v->varSymbol, parentTypeDec);
             A_type *fieldTypeDec = getFieldTypeDec(v->varSymbol, parentTypeDec);
+
             auto fieldPtr = builder.CreateGEP(
                     parentValue->getType()->getPointerElementType(),
                     parentValue,
                     genIndice({0, idx})
             );
+
             return {fieldPtr, fieldTypeDec};
         }
         case A_var::type::SUBSCRIPT: {
@@ -79,6 +81,8 @@ std::pair<llvm::Value *, A_type *> CodeGenerator::genLeftValue(A_var *var) {
             llvm::Value *offset = genExp(v->exp);
             auto elementTyDec = decsType.get(parentTypeDec->array);
             assert(elementTyDec || (parentTypeDec->array == "int") || (parentTypeDec->array == "string"));
+
+            // get a element pointer to store the subscript type
             auto elementPtr = builder.CreateGEP(
                     parentValue->getType()->getPointerElementType(),
                     parentValue,
@@ -142,9 +146,10 @@ llvm::Value *CodeGenerator::genOpExp(A_OpExp *exp) {
     assert(0);
 }
 
+// identify the index of name in the filed list
 int CodeGenerator::getIdxInRecordTy(const std::string &name, A_RecordTy *ty) {
     int idx = 0;
-    auto list = ty->record;
+    auto list = ty->record;     // list of filed var
     for (; list != nullptr && list->head != nullptr; list = list->tail) {
         if (list->head->name == name)
             break;
@@ -218,7 +223,7 @@ llvm::Value *CodeGenerator::genSeqExp(A_SeqExp *exp) {
 llvm::Value *CodeGenerator::genAssignExp(A_AssignExp *exp) {
     assert(exp->var != nullptr);
     auto dst = genLeftValue(exp->var);
-    auto val = genExp(exp->exp);
+    auto val = genExp(exp->exp);    // assignment value
     if (val->getType() == NilTy) {
         // need to deduction type
         if (dst.second == nullptr) { // string type has no dec
@@ -423,7 +428,7 @@ llvm::Value *CodeGenerator::genArrayExp(A_ArrayExp *exp) {
 }
 
 
-llvm::Value *CodeGenerator::genBreakExp(A_BreakExp *exp) {
+llvm::Value *CodeGenerator::genBreakExp() {
     // ignore invalid break
     if (!loop_stack.empty()) {
         builder.CreateBr(loop_stack.back());
@@ -537,9 +542,6 @@ void CodeGenerator::genFuncDec(A_FunctionDec *dec) {
         if (TheFunction->getFunctionType()->getReturnType() != llvm::Type::getVoidTy(context))
             builder.CreateRet(retVal);
         else builder.CreateRet(nullptr);
-        // if(verifyFunction(*TheFunction, &llvm::outs())) {
-        //     error("Generator: Fail to generate function " + cur->name);
-        // }
         endScope();
         builder.SetInsertPoint(originalBlock, originalPoint);
     }
