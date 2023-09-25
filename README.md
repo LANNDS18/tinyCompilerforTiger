@@ -1,4 +1,4 @@
-# Tiger Compiler
+# Tiny Tiger Compiler
 
 
 ## Run
