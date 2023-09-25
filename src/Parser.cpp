@@ -6,7 +6,7 @@
 namespace FRONTEND {
 
 
-    Token Parser::popToken() {
+    Token Parser::generateToken() {
         if (q.empty())
             return lex.tokenizeNext();
         auto tk = q.front();
@@ -15,7 +15,7 @@ namespace FRONTEND {
     }
 
     Token Parser::checkNextToken(int token_ty) {
-        auto tk = popToken();
+        auto tk = generateToken();
         if (tk.type != token_ty) {
             Token exp(token_ty, -1);
             throw std::runtime_error(
@@ -26,12 +26,12 @@ namespace FRONTEND {
     }
 
     A_dec *Parser::declaration() {
-        auto t = popToken();
+        auto t = generateToken();
         switch (t.type) {
             case VAR : {
                 auto id = checkNextToken(IDENTIFIER);
                 S_symbol type;
-                Token _t = popToken();
+                Token _t = generateToken();
                 if (_t.type == COLON) {
                     type = checkNextToken(IDENTIFIER).val;
                     checkNextToken(ASSIGN);
@@ -56,7 +56,7 @@ namespace FRONTEND {
                 checkNextToken(L_SMALL);
                 auto list = fieldList();
                 checkNextToken(R_SMALL);
-                Token next = popToken();
+                Token next = generateToken();
                 if (next.type == EQ) {
                     auto e = parse_expression();
                     auto func = new A_funcDec(t.line, func_name.val, list, "", e);
@@ -83,7 +83,7 @@ namespace FRONTEND {
     }
 
     A_exp *Parser::parse_expression() {
-        auto t = popToken();
+        auto t = generateToken();
         switch (t.type) {
             case LET: {
                 auto ds = declarationList();
@@ -112,7 +112,7 @@ namespace FRONTEND {
                 auto cond = parse_expression();
                 checkNextToken(THEN);
                 auto trueBranch = parse_expression();
-                Token isElse = popToken();
+                Token isElse = generateToken();
                 if (isElse.type != ELSE) {
                     pushTokenBack(isElse);
                     return new A_IfExp(t.line, cond, trueBranch, nullptr);
@@ -149,7 +149,7 @@ namespace FRONTEND {
     }
 
     A_exp *Parser::assignmentExpHelper() {
-        auto t = popToken();
+        auto t = generateToken();
         if (t.type != ASSIGN) {
             pushTokenBack(t);
             return nullptr;
@@ -163,7 +163,7 @@ namespace FRONTEND {
     }
 
     A_exp *Parser::orExpHelper(A_exp *parent) {
-        Token expected_or = popToken();
+        Token expected_or = generateToken();
         if (expected_or.type != OR) {
             pushTokenBack(expected_or);
             return parent;
@@ -180,7 +180,7 @@ namespace FRONTEND {
     }
 
     A_exp *Parser::andExpHelper(A_exp *parent) {
-        Token expected_and = popToken();
+        Token expected_and = generateToken();
         if (expected_and.type != AND) {
             pushTokenBack(expected_and);
             return parent;
@@ -197,7 +197,7 @@ namespace FRONTEND {
     }
 
     A_exp *Parser::relationExpHelper(A_exp *parent) {
-        Token t = popToken();
+        Token t = generateToken();
         A_operator op;
         switch (t.type) {
             case EQ:
@@ -233,7 +233,7 @@ namespace FRONTEND {
     }
 
     A_exp *Parser::addExpHelper(A_exp *parent) {
-        Token t = popToken();
+        Token t = generateToken();
         if (t.type != ADD && t.type != SUB) {
             pushTokenBack(t);
             return parent;
@@ -252,7 +252,7 @@ namespace FRONTEND {
     }
 
     A_exp *Parser::mulExpHelper(A_exp *parent) {
-        Token t = popToken();
+        Token t = generateToken();
         if (t.type != MUL && t.type != DIV) {
             pushTokenBack(t);
             return parent;
@@ -266,7 +266,7 @@ namespace FRONTEND {
     }
 
     A_exp *Parser::subExp() {
-        Token t = popToken();
+        Token t = generateToken();
         if (t.type != SUB) {
             pushTokenBack(t);
             return valExp();
@@ -277,7 +277,7 @@ namespace FRONTEND {
     }
 
     A_exp *Parser::valExp() {
-        Token t = popToken();
+        Token t = generateToken();
         switch (t.type) {
             case INT_LITERAL:
                 return new A_IntExp(t.line, atoi(t.val.c_str()));
@@ -305,7 +305,7 @@ namespace FRONTEND {
     }
 
     A_exp *Parser::identifierExp(A_var *var) {
-        Token t = popToken();
+        Token t = generateToken();
         switch (t.type) {
             case DOT: {
                 Token id = checkNextToken(IDENTIFIER);
@@ -314,16 +314,16 @@ namespace FRONTEND {
                 break;
             case L_SMALL: {
                 auto func = dynamic_cast<A_SimpleVar *>(var);
-                Token _t = popToken();
+                Token _t = generateToken();
                 if (_t.type == R_SMALL) {
-                    return new A_CallExp(func->pos, func->sym, nullptr);
+                    return new A_CallExp(func->pos, func->varSymbol, nullptr);
                 }
                 pushTokenBack(_t);
                 std::vector<A_exp *> vec;
                 while (true) {
                     auto e = parse_expression();
                     vec.push_back(e);
-                    Token _temp_t = popToken();
+                    Token _temp_t = generateToken();
                     if (_temp_t.type == R_SMALL)
                         break;
                     if (_temp_t.type != COMMA) {
@@ -337,7 +337,7 @@ namespace FRONTEND {
                     auto tail = list;
                     list = new A_expList(vec[i], tail);
                 }
-                return new A_CallExp(func->pos, func->sym, list);
+                return new A_CallExp(func->pos, func->varSymbol, list);
             }
                 break;
             case L_MID: {
@@ -351,7 +351,7 @@ namespace FRONTEND {
                 auto list = expFieldList();
                 checkNextToken(R_BIG);
                 auto v = dynamic_cast<A_SimpleVar *>(var);
-                return new A_RecordExp(v->pos, v->sym, list);
+                return new A_RecordExp(v->pos, v->varSymbol, list);
             }
             case OF: {
                 auto v = dynamic_cast<A_SubscriptVar *>(var);
@@ -367,7 +367,7 @@ namespace FRONTEND {
                     std::cerr << "Parser: array parse_expression expect format 'typename[size] of initialexp'."
                               << std::endl;
                 }
-                return new A_ArrayExp(v->pos, primev->sym, v->exp, e);
+                return new A_ArrayExp(v->pos, primev->varSymbol, v->exp, e);
             }
             default:
                 pushTokenBack(t);
@@ -377,7 +377,7 @@ namespace FRONTEND {
     }
 
     A_exp *Parser::expList() {
-        Token t = popToken();
+        Token t = generateToken();
         if (t.type == R_SMALL) {
             pushTokenBack(t);
             return new A_SeqExp(t.line, nullptr);
@@ -389,7 +389,7 @@ namespace FRONTEND {
             auto e = parse_expression();
             p = e->pos;
             vec.push_back(e);
-            Token _t = popToken();
+            Token _t = generateToken();
             if (_t.type == SEMICOLON)
                 continue;
             pushTokenBack(_t);
@@ -404,7 +404,7 @@ namespace FRONTEND {
     }
 
     A_expFieldList *Parser::expFieldList() {
-        Token t = popToken();
+        Token t = generateToken();
         if (t.type == R_BIG) {
             pushTokenBack(t);
             return new A_expFieldList(nullptr, nullptr);
@@ -414,7 +414,7 @@ namespace FRONTEND {
         while (true) {
             auto ef = expField();
             vec.push_back(ef);
-            Token _t = popToken();
+            Token _t = generateToken();
             if (_t.type == COMMA)
                 continue;
             pushTokenBack(_t);
@@ -436,7 +436,7 @@ namespace FRONTEND {
     }
 
     A_fieldList *Parser::fieldList() {
-        Token t = popToken();
+        Token t = generateToken();
         if (t.type == R_BIG || t.type == R_SMALL) {
             pushTokenBack(t);
             return new A_fieldList(nullptr, nullptr);
@@ -446,7 +446,7 @@ namespace FRONTEND {
         while (true) {
             auto f = field();
             vec.push_back(f);
-            Token _t = popToken();
+            Token _t = generateToken();
             if (_t.type == COMMA)
                 continue;
             pushTokenBack(_t);
@@ -470,7 +470,7 @@ namespace FRONTEND {
 
 
     A_type *Parser::ty() {
-        Token t = popToken();
+        Token t = generateToken();
         switch (t.type) {
             case IDENTIFIER:
                 return new A_NameTy(t.line, t.val);

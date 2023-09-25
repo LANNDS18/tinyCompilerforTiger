@@ -179,7 +179,7 @@ void ASTPrinter::printVar(A_var *var, int front_space) {
     switch (var->ty) {
         case A_var::type::SIMPLE: {
             auto v = dynamic_cast<A_SimpleVar *>(var);
-            cout << "SimpleVar(Symbol(" << v->sym << "))";
+            cout << "SimpleVar(Symbol(" << v->varSymbol << "))";
         }
             break;
         case A_var::type::FIELD: {
@@ -188,7 +188,7 @@ void ASTPrinter::printVar(A_var *var, int front_space) {
             printVar(v->var, front_space + 4);
             cout << "," << endl;
             printSpace(front_space + 4);
-            cout << "Symbol(" << v->sym << "))";
+            cout << "Symbol(" << v->varSymbol << "))";
         }
             break;
         case A_var::type::SUBSCRIPT: {

@@ -61,9 +61,9 @@ public:
 // Structure representing a simple variable in the AST.
 struct A_SimpleVar : public A_var {
 public:
-    S_symbol sym;   // Name of the variable
+    S_symbol varSymbol;   // Name of the variable
 
-    A_SimpleVar(A_pos p, S_symbol s) : A_var(p, type::SIMPLE), sym(std::move(s)) {};
+    A_SimpleVar(A_pos p, S_symbol s) : A_var(p, type::SIMPLE), varSymbol(std::move(s)) {};
 };
 
 
@@ -71,9 +71,9 @@ public:
 struct A_FieldVar : public A_var {
 public:
     A_var *var;       // The containing variable or structure
-    S_symbol sym;     // The name of the field
+    S_symbol varSymbol;     // The name of the field
 
-    A_FieldVar(A_pos p, A_var *var_, S_symbol s) : A_var(p, type::FIELD), var(var_), sym(std::move(s)) {};
+    A_FieldVar(A_pos p, A_var *var_, S_symbol s) : A_var(p, type::FIELD), var(var_), varSymbol(std::move(s)) {};
 };
 
 

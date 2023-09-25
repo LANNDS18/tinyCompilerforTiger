@@ -49,6 +49,7 @@ private:
     llvm::LLVMContext context;
     llvm::IRBuilder<> builder;
     std::unique_ptr<llvm::Module> module;
+
     std::vector<BasicBlock *> loop_stack;
 
     table<llvm::Value> envValue;

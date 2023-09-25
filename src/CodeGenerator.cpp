@@ -52,8 +52,8 @@ std::pair<llvm::Value *, A_type *> CodeGenerator::genLeftValue(A_var *var) {
     switch (var->ty) {
         case A_var::type::SIMPLE: {
             auto v = dynamic_cast<A_SimpleVar *>(var);
-            auto vdec = decsValue.get(v->sym);
-            return {getNamedValue(v->sym), decsType.get(vdec->type)};
+            auto vdec = decsValue.get(v->varSymbol);
+            return {getNamedValue(v->varSymbol), decsType.get(vdec->type)};
         }
         case A_var::type::FIELD: {
             auto v = dynamic_cast<A_FieldVar *>(var);
@@ -61,13 +61,13 @@ std::pair<llvm::Value *, A_type *> CodeGenerator::genLeftValue(A_var *var) {
             llvm::Value *parentValue = convertRightValue(parent.first);
             auto *parentTypeDec = dynamic_cast<A_RecordTy *>(parent.second);
             assert(parentTypeDec && parentTypeDec->ty == A_type::type::RecordTy);
-            int idx = getIdxInRecordTy(v->sym, parentTypeDec);
-            A_type *fieldTypeDec = getFieldTypeDec(v->sym, parentTypeDec);
+            int idx = getIdxInRecordTy(v->varSymbol, parentTypeDec);
+            A_type *fieldTypeDec = getFieldTypeDec(v->varSymbol, parentTypeDec);
             auto fieldPtr = builder.CreateGEP(
                     parentValue->getType()->getPointerElementType(),
                     parentValue,
                     genIndice({0, idx})
-            ); // %todo
+            );
             return {fieldPtr, fieldTypeDec};
         }
         case A_var::type::SUBSCRIPT: {
@@ -83,7 +83,7 @@ std::pair<llvm::Value *, A_type *> CodeGenerator::genLeftValue(A_var *var) {
                     parentValue->getType()->getPointerElementType(),
                     parentValue,
                     builder.CreateTrunc(offset, builder.getInt32Ty())
-            ); // %todo
+            );
             return {elementPtr, elementTyDec};
         }
     }
@@ -228,7 +228,7 @@ llvm::Value *CodeGenerator::genAssignExp(A_AssignExp *exp) {
         else if (dst.second->ty == A_type::type::RecordTy) {
             val = convertTypedNil(
                     getFieldType(
-                            dynamic_cast<A_FieldVar *>(exp->var)->sym,
+                            dynamic_cast<A_FieldVar *>(exp->var)->varSymbol,
                             dynamic_cast<A_RecordTy *>(dst.second)));
         }
             // array type

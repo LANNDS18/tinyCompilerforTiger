@@ -233,9 +233,9 @@ BaseTy *TypeChecker::checkVar(A_var *var) {
     switch (var->ty) {
         case t::SIMPLE: {
             auto v = dynamic_cast<A_SimpleVar *>(var);
-            auto res = symbolTable.lookVar(v->sym);
+            auto res = symbolTable.lookVar(v->varSymbol);
             if (res == nullptr)
-                error(v->pos, "undeclared var " + v->sym);
+                error(v->pos, "undeclared var " + v->varSymbol);
             return res;
         }
         case t::FIELD: {
@@ -244,9 +244,9 @@ BaseTy *TypeChecker::checkVar(A_var *var) {
             if (!parTy || parTy->ty != TIG_DTYPE::RECORD)
                 error(v->pos, "parent type not exist or is not record type in field var");
             auto par = dynamic_cast<RecordTy *>(parTy);
-            if (!par->fields.count(v->sym))
-                error(v->pos, "parent type has no field named " + v->sym);
-            return par->fields[v->sym];
+            if (!par->fields.count(v->varSymbol))
+                error(v->pos, "parent type has no field named " + v->varSymbol);
+            return par->fields[v->varSymbol];
         }
         case t::SUBSCRIPT: {
             auto v = dynamic_cast<A_SubscriptVar *>(var);

@@ -12,7 +12,7 @@ namespace FRONTEND {
 
         Token checkNextToken(int token_ty);
 
-        Token popToken();
+        Token generateToken();
 
         void pushTokenBack(const Token& t) { q.push(t); };
 
