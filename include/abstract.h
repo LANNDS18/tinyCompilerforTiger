@@ -417,6 +417,7 @@ public:
     A_TyDeclareName(S_symbol name_, A_type *ty_) : name(std::move(name_)), ty(ty_) {};
 };
 
+// linked list
 struct A_TyDeclareNameList {
 public:
     A_TyDeclareName *head;

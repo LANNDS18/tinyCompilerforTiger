@@ -451,19 +451,19 @@ void CodeGenerator::genVarDec(A_VarDec *dec) {
 }
 
 void CodeGenerator::genTypeDec(A_TypeDec *dec) {
-    auto l = dec->type;
-    // At first, we just focus on record type, because it supports pre declare
-    for (; l != nullptr && l->head != nullptr; l = l->tail) {
-        auto cur = l->head;
+    auto pTyDeclareNameList = dec->type;
+    // Record type, which supports pre declare
+    for (; pTyDeclareNameList != nullptr && pTyDeclareNameList->head != nullptr; pTyDeclareNameList = pTyDeclareNameList->tail) {
+        auto cur = pTyDeclareNameList->head;
         if (cur->ty->ty == A_type::type::RecordTy) {
             envType.put(cur->name, llvm::PointerType::getUnqual(llvm::StructType::create(context, cur->name)));
             decsType.put(cur->name, cur->ty);
         }
     }
 
-    // Then, we gen array types, which cannot be pre declared
-    for (l = dec->type; l != nullptr && l->head != nullptr; l = l->tail) {
-        auto cur = l->head;
+    // Array types, which cannot be pre declared
+    for (pTyDeclareNameList = dec->type; pTyDeclareNameList != nullptr && pTyDeclareNameList->head != nullptr; pTyDeclareNameList = pTyDeclareNameList->tail) {
+        auto cur = pTyDeclareNameList->head;
         if (cur->ty->ty == A_type::type::ArrayTy) {
             auto t = dynamic_cast<A_ArrayTy *>(cur->ty);
             auto elementType = envType.get(t->array);
@@ -474,20 +474,20 @@ void CodeGenerator::genTypeDec(A_TypeDec *dec) {
     }
 
     // In the end, we set body of record type.
-    for (l = dec->type; l != nullptr && l->head != nullptr; l = l->tail) {
-        auto cur = l->head;
+    for (pTyDeclareNameList = dec->type; pTyDeclareNameList != nullptr && pTyDeclareNameList->head != nullptr; pTyDeclareNameList = pTyDeclareNameList->tail) {
+        auto cur = pTyDeclareNameList->head;
         if (cur->ty->ty == A_type::type::RecordTy) {
             auto t = dynamic_cast<A_RecordTy *>(cur->ty);
             std::vector<llvm::Type *> fields;
-            for (auto _l = t->record; _l != nullptr; _l = _l->tail) {
-                if (_l->head == nullptr)
+            for (auto pFieldList = t->record; pFieldList != nullptr; pFieldList = pFieldList->tail) {
+                if (pFieldList->head == nullptr)
                     break;
-                if (_l->head->type == "int")
+                if (pFieldList->head->type == "int")
                     fields.push_back(llvm::Type::getInt64Ty(context));
-                else if (_l->head->type == "string")
+                else if (pFieldList->head->type == "string")
                     fields.push_back(llvm::Type::getInt8PtrTy(context));
                 else
-                    fields.push_back(envType.get(_l->head->type));
+                    fields.push_back(envType.get(pFieldList->head->type));
             }
             auto structPointerType = llvm::cast<llvm::PointerType>(envType.get(cur->name));
             assert(structPointerType != nullptr && structPointerType->isPointerTy());

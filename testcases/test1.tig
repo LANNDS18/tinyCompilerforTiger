@@ -25,10 +25,10 @@ let
       for i := 0
       to n-1
       do mat[i] := n;
-      n := 1000;
+      n := 10 * n;
       g := g+1;
       puti(n);
-      print("\n")
+      print(" is n * 10 \n")
     )
 
 in
