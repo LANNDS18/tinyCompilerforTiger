@@ -42,7 +42,7 @@ declare i8* @__gets__()
 declare i8* @alloc.1(i64)
 
 define i64 @main() {
-entry:
+program_entry:
   %0 = call i64 @__getint__()
   %1 = alloca i64, align 8
   store i64 %0, i64* %1, align 4
@@ -54,29 +54,29 @@ entry:
   %5 = mul i64 %4, 8
   %6 = call i8* @alloc(i64 %5)
   %array = bitcast i8* %6 to i64*
-  br label %finit
+  br label %array_for_init
 
-finit:                                            ; preds = %entry
+array_for_init:                                   ; preds = %program_entry
   %7 = alloca i32, align 4
   store i32 0, i32* %7, align 4
-  br label %fcond
+  br label %array_for_cond
 
-fcond:                                            ; preds = %fbody, %finit
+array_for_cond:                                   ; preds = %array_for_body, %array_for_init
   %8 = load i32, i32* %7, align 4
   %9 = trunc i64 %4 to i32
   %10 = icmp slt i32 %8, %9
-  br i1 %10, label %fbody, label %fend
+  br i1 %10, label %array_for_body, label %array_for_end
 
-fbody:                                            ; preds = %fcond
+array_for_body:                                   ; preds = %array_for_cond
   %11 = load i32, i32* %7, align 4
   %12 = getelementptr i64, i64* %array, i32 %11
   store i64 0, i64* %12, align 4
   %13 = load i32, i32* %7, align 4
   %14 = add i32 %13, 1
   store i32 %14, i32* %7, align 4
-  br label %fcond
+  br label %array_for_cond
 
-fend:                                             ; preds = %fcond
+array_for_end:                                    ; preds = %array_for_cond
   %15 = alloca i64*, align 8
   store i64* %array, i64** %15, align 8
   %16 = call i8* @alloc(i64 16)
@@ -115,26 +115,26 @@ fend:                                             ; preds = %fcond
 }
 
 define internal void @printArr(i64* %0, i64 %1) {
-entry:
+func_entry:
   %2 = alloca i64*, align 8
   store i64* %0, i64** %2, align 8
   %3 = alloca i64, align 8
   store i64 %1, i64* %3, align 4
-  br label %finit
+  br label %for_init
 
-finit:                                            ; preds = %entry
+for_init:                                         ; preds = %func_entry
   %4 = alloca i64, align 8
   store i64 0, i64* %4, align 4
-  br label %fcond
+  br label %for_cond
 
-fcond:                                            ; preds = %fbody, %finit
+for_cond:                                         ; preds = %for_body, %for_init
   %5 = load i64, i64* %3, align 4
   %6 = sub i64 %5, 1
   %7 = load i64, i64* %4, align 4
   %8 = icmp sle i64 %7, %6
-  br i1 %8, label %fbody, label %fend
+  br i1 %8, label %for_body, label %for_end
 
-fbody:                                            ; preds = %fcond
+for_body:                                         ; preds = %for_cond
   %9 = load i64*, i64** %2, align 8
   %10 = load i64, i64* %4, align 4
   %11 = trunc i64 %10 to i32
@@ -145,34 +145,34 @@ fbody:                                            ; preds = %fcond
   %14 = load i64, i64* %4, align 4
   %15 = add i64 %14, 1
   store i64 %15, i64* %4, align 4
-  br label %fcond
+  br label %for_cond
 
-fend:                                             ; preds = %fcond
+for_end:                                          ; preds = %for_cond
   call void @__print__(i8* getelementptr inbounds ([2 x i8], [2 x i8]* @2, i32 0, i32 0))
   ret void
 }
 
 define internal void @initArr(i64* %0, i64 %1) {
-entry:
+func_entry:
   %2 = alloca i64*, align 8
   store i64* %0, i64** %2, align 8
   %3 = alloca i64, align 8
   store i64 %1, i64* %3, align 4
-  br label %finit
+  br label %for_init
 
-finit:                                            ; preds = %entry
+for_init:                                         ; preds = %func_entry
   %4 = alloca i64, align 8
   store i64 0, i64* %4, align 4
-  br label %fcond
+  br label %for_cond
 
-fcond:                                            ; preds = %fbody, %finit
+for_cond:                                         ; preds = %for_body, %for_init
   %5 = load i64, i64* %3, align 4
   %6 = sub i64 %5, 1
   %7 = load i64, i64* %4, align 4
   %8 = icmp sle i64 %7, %6
-  br i1 %8, label %fbody, label %fend
+  br i1 %8, label %for_body, label %for_end
 
-fbody:                                            ; preds = %fcond
+for_body:                                         ; preds = %for_cond
   %9 = load i64*, i64** %2, align 8
   %10 = load i64, i64* %4, align 4
   %11 = trunc i64 %10 to i32
@@ -182,35 +182,35 @@ fbody:                                            ; preds = %fcond
   %14 = load i64, i64* %4, align 4
   %15 = add i64 %14, 1
   store i64 %15, i64* %4, align 4
-  br label %fcond
+  br label %for_cond
 
-fend:                                             ; preds = %fcond
+for_end:                                          ; preds = %for_cond
   ret void
 }
 
 define internal i64 @initArr2(i64* %0, i64 %1, i64 %2) {
-entry:
+func_entry:
   %3 = alloca i64*, align 8
   store i64* %0, i64** %3, align 8
   %4 = alloca i64, align 8
   store i64 %1, i64* %4, align 4
   %5 = alloca i64, align 8
   store i64 %2, i64* %5, align 4
-  br label %finit
+  br label %for_init
 
-finit:                                            ; preds = %entry
+for_init:                                         ; preds = %func_entry
   %6 = alloca i64, align 8
   store i64 0, i64* %6, align 4
-  br label %fcond
+  br label %for_cond
 
-fcond:                                            ; preds = %fbody, %finit
+for_cond:                                         ; preds = %for_body, %for_init
   %7 = load i64, i64* %4, align 4
   %8 = sub i64 %7, 1
   %9 = load i64, i64* %6, align 4
   %10 = icmp sle i64 %9, %8
-  br i1 %10, label %fbody, label %fend
+  br i1 %10, label %for_body, label %for_end
 
-fbody:                                            ; preds = %fcond
+for_body:                                         ; preds = %for_cond
   %11 = load i64*, i64** %3, align 8
   %12 = load i64, i64* %6, align 4
   %13 = trunc i64 %12 to i32
@@ -220,9 +220,9 @@ fbody:                                            ; preds = %fcond
   %16 = load i64, i64* %6, align 4
   %17 = add i64 %16, 1
   store i64 %17, i64* %6, align 4
-  br label %fcond
+  br label %for_cond
 
-fend:                                             ; preds = %fcond
+for_end:                                          ; preds = %for_cond
   store i64 1000, i64* %4, align 4
   %18 = load i64, i64* %5, align 4
   %19 = add i64 %18, 1

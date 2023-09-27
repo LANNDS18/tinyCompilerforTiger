@@ -172,7 +172,7 @@ BaseTy *TypeChecker::checkExp(A_exp *exp) {
 
         case expty::WhileExp: {
             auto e = dynamic_cast<A_WhileExp *>(exp);
-            auto con_ty = checkExp(e->test);
+            auto con_ty = checkExp(e->condition);
             if (con_ty == nullptr || con_ty->ty != TIG_DTYPE::INT)
                 error(e->pos, "The Doc condition for the while statement must be of type int");
             checkExp(e->body);

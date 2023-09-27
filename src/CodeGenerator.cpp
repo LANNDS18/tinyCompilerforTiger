@@ -251,9 +251,9 @@ llvm::Value *CodeGenerator::genIfExp(A_IfExp *exp) {
     assert(CondV != nullptr);
 
     llvm::Function *TheFunction = builder.GetInsertBlock()->getParent();
-    BasicBlock *ThenBB = BasicBlock::Create(context, "then", TheFunction);
-    BasicBlock *ElseBB = BasicBlock::Create(context, "else");
-    BasicBlock *MergeBB = BasicBlock::Create(context, "ifcond");
+    BasicBlock *ThenBB = BasicBlock::Create(context, "if_then", TheFunction);
+    BasicBlock *ElseBB = BasicBlock::Create(context, "if_else");
+    BasicBlock *MergeBB = BasicBlock::Create(context, "if_cond");
     builder.CreateCondBr(CondV, ThenBB, ElseBB);
 
     // generate then cond
@@ -290,14 +290,14 @@ llvm::Value *CodeGenerator::genIfExp(A_IfExp *exp) {
 
 llvm::Value *CodeGenerator::genWhileExp(A_WhileExp *exp) {
     llvm::Function *TheFunction = builder.GetInsertBlock()->getParent();
-    BasicBlock *CondBB = BasicBlock::Create(context, "wcond", TheFunction);
-    BasicBlock *WhileBodyBB = BasicBlock::Create(context, "wbody", TheFunction);
-    BasicBlock *EndBB = BasicBlock::Create(context, "wend", TheFunction);
+    BasicBlock *CondBB = BasicBlock::Create(context, "while_cond", TheFunction);
+    BasicBlock *WhileBodyBB = BasicBlock::Create(context, "while_body", TheFunction);
+    BasicBlock *EndBB = BasicBlock::Create(context, "while_end", TheFunction);
     loop_stack.push_back(EndBB);
 
     builder.CreateBr(CondBB);
     builder.SetInsertPoint(CondBB);
-    llvm::Value *cond = genExp(exp->test);
+    llvm::Value *cond = genExp(exp->condition);
     cond = builder.CreateICmpNE(cond, builder.getInt64(0));
     assert(cond != nullptr);
     builder.CreateCondBr(cond, WhileBodyBB, EndBB);
@@ -326,10 +326,10 @@ llvm::Value *CodeGenerator::genLetExp(A_LetExp *exp) {
 llvm::Value *CodeGenerator::genForExp(A_ForExp *exp) {
     beginScope();
     llvm::Function *TheFunction = builder.GetInsertBlock()->getParent();
-    BasicBlock *InitBB = BasicBlock::Create(context, "finit", TheFunction);
-    BasicBlock *CondBB = BasicBlock::Create(context, "fcond", TheFunction);
-    BasicBlock *ForBodyBB = BasicBlock::Create(context, "fbody", TheFunction);
-    BasicBlock *EndBB = BasicBlock::Create(context, "fend", TheFunction);
+    BasicBlock *InitBB = BasicBlock::Create(context, "for_init", TheFunction);
+    BasicBlock *CondBB = BasicBlock::Create(context, "for_cond", TheFunction);
+    BasicBlock *ForBodyBB = BasicBlock::Create(context, "for_body", TheFunction);
+    BasicBlock *EndBB = BasicBlock::Create(context, "for_end", TheFunction);
     loop_stack.push_back(EndBB);
 
     // init "i"
@@ -390,10 +390,10 @@ llvm::Value *CodeGenerator::genArrayExp(A_ArrayExp *exp) {
 
     // init the array in a for loop style
     llvm::Function *TheFunction = builder.GetInsertBlock()->getParent();
-    BasicBlock *InitBB = BasicBlock::Create(context, "finit", TheFunction);
-    BasicBlock *CondBB = BasicBlock::Create(context, "fcond", TheFunction);
-    BasicBlock *ForBodyBB = BasicBlock::Create(context, "fbody", TheFunction);
-    BasicBlock *EndBB = BasicBlock::Create(context, "fend", TheFunction);
+    BasicBlock *InitBB = BasicBlock::Create(context, "array_for_init", TheFunction);
+    BasicBlock *CondBB = BasicBlock::Create(context, "array_for_cond", TheFunction);
+    BasicBlock *ForBodyBB = BasicBlock::Create(context, "array_for_body", TheFunction);
+    BasicBlock *EndBB = BasicBlock::Create(context, "array_for_end", TheFunction);
 
     // init "i"
     builder.CreateBr(InitBB);
@@ -525,7 +525,7 @@ void CodeGenerator::genFuncDec(A_FunctionDec *dec) {
         beginScope();
         llvm::Function *TheFunction = envFunc.get(cur->name);
         assert(TheFunction != nullptr);
-        BasicBlock *Body = BasicBlock::Create(context, "entry", TheFunction);
+        BasicBlock *Body = BasicBlock::Create(context, "func_entry", TheFunction);
         auto originalPoint = builder.GetInsertPoint();
         auto originalBlock = builder.GetInsertBlock();
         builder.SetInsertPoint(Body);
@@ -635,7 +635,7 @@ void CodeGenerator::generate(A_exp *syntax_tree, const std::string &filename, in
     auto mainFunction =
             llvm::Function::Create(mainFunctionType, llvm::GlobalValue::ExternalLinkage,
                                    "main", module.get());
-    auto block = BasicBlock::Create(context, "entry", mainFunction);
+    auto block = BasicBlock::Create(context, "program_entry", mainFunction);
     builder.SetInsertPoint(block);
     genExp(syntax_tree);
     builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), llvm::APInt(64, 0)));

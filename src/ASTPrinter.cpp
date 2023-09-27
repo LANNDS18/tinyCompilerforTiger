@@ -144,7 +144,7 @@ void ASTPrinter::printExp(A_exp *exp, int front_space) {
         case A_exp::type::WhileExp: {
             auto e = dynamic_cast<A_WhileExp *>(exp);
             cout << "WhileExp(" << endl;
-            printExp(e->test, front_space + 4);
+            printExp(e->condition, front_space + 4);
             cout << "," << endl;
             printExp(e->body, front_space + 4);
             cout << ")";

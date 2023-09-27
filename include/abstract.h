@@ -206,11 +206,11 @@ public:
 // While exp
 struct A_WhileExp : public A_exp {
 public:
-    A_exp *test;
+    A_exp *condition;
     A_exp *body;
 
     A_WhileExp(A_pos p, A_exp *test_, A_exp *body_) :
-            A_exp(p, type::WhileExp), test(test_), body(body_) {};
+            A_exp(p, type::WhileExp), condition(test_), body(body_) {};
 };
 
 
